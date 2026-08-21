@@ -1,0 +1,21 @@
+# Copy this service block into civicconnect-backend/docker-compose.yml
+# (under the existing `services:` key), and place this whole
+# civicconnect-ai folder as a sibling of civicconnect-backend, e.g.:
+#
+#   civicconnect/
+#     civicconnect-backend/
+#     civicconnect-ai/
+#
+# Then adjust the `build.context` path below to point at it, e.g.
+# "../civicconnect-ai" if run from within civicconnect-backend/.
+
+  ai-service:
+    build:
+      context: ../civicconnect-ai
+      dockerfile: Dockerfile
+    container_name: civicconnect-ai
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      CLASSIFIER_MODEL_PATH: ${CLASSIFIER_MODEL_PATH:-yolov8n.pt}

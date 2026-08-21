@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: civicconnect-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: civicconnect
+      POSTGRES_USER: civicconnect
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U civicconnect"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: civicconnect-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/civicconnect
+      SPRING_DATASOURCE_USERNAME: civicconnect
+      SPRING_DATASOURCE_PASSWORD: 1234
+    ports:
+      - "8080:8080"
+  ai-service:
+    build:
+      context: ../civicconnect-ai
+      dockerfile: Dockerfile
+    container_name: civicconnect-ai
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      CLASSIFIER_MODEL_PATH: yolov8n.pt
+
+volumes:
+  pgdata:

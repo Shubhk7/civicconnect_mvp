@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home — CivicConnect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#101828;
+    --ink-soft:#565F73;
+    --paper:#F6F7F5;
+    --paper-raised:#FFFFFF;
+    --indigo:#24326B;
+    --indigo-deep:#161F49;
+    --indigo-tint:#E7E9F3;
+    --amber:#C9822E;
+    --amber-tint:#FBF0E1;
+    --teal:#0F7A63;
+    --teal-tint:#E3F1EC;
+    --red:#B8422F;
+    --red-tint:#F8E9E5;
+    --line:#DBDED6;
+    --disp:'Space Grotesk',sans-serif;
+    --body:'Inter',sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  img{display:block;max-width:100%;}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 32px;}
+  @media (max-width:640px){.wrap{padding:0 20px;}}
+  :focus-visible{outline:2.5px solid var(--indigo);outline-offset:3px;}
+  ::selection{background:var(--indigo-tint);}
+
+  header{
+    position:sticky;top:0;z-index:60;
+    background:rgba(246,247,245,.92);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:700;font-size:19px;letter-spacing:-.01em;}
+  .brand .mark{width:28px;height:28px;border-radius:7px;background:var(--indigo);position:relative;flex-shrink:0;}
+  .brand .mark::before,.brand .mark::after{content:"";position:absolute;background:var(--paper);}
+  .brand .mark::before{left:7px;right:7px;top:12px;height:4px;border-radius:2px;}
+  .brand .mark::after{top:7px;bottom:7px;left:12px;width:4px;border-radius:2px;}
+  .navlinks{display:flex;gap:30px;font-size:14.5px;color:var(--ink-soft);}
+  .navlinks a:hover{color:var(--ink);}
+  @media (max-width:760px){.navlinks{display:none;}}
+  .navactions{display:flex;gap:10px;align-items:center;}
+  .btn{
+    font-family:var(--body);font-weight:600;font-size:14px;
+    border-radius:9px;padding:10px 18px;border:1.5px solid transparent;
+    transition:transform .12s ease, background .15s, border-color .15s, color .15s;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-solid{background:var(--indigo);color:#fff;}
+  .btn-solid:hover{background:var(--indigo-deep);}
+  .btn-ghost{border-color:var(--indigo);color:var(--indigo);}
+  .btn-ghost:hover{background:var(--indigo);color:#fff;}
+  .btn-text{color:var(--ink-soft);padding:10px 6px;}
+  .btn-text:hover{color:var(--ink);}
+  .btn-sm{padding:7px 13px;font-size:13px;}
+  .btn-danger-outline{border-color:var(--red);color:var(--red);}
+  .btn-danger-outline:hover{background:var(--red);color:#fff;}
+
+  .hero{padding:76px 0 40px;}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:start;}
+  @media (max-width:900px){.hero-grid{grid-template-columns:1fr;gap:40px;}}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);
+    font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--indigo);
+    background:var(--indigo-tint);padding:6px 12px;border-radius:100px;margin-bottom:22px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  h1{font-family:var(--disp);font-weight:700;font-size:clamp(34px,4.6vw,54px);line-height:1.04;letter-spacing:-.02em;}
+  h1 .accent{color:var(--indigo);}
+  .lede{margin-top:20px;font-size:17.5px;color:var(--ink-soft);max-width:480px;}
+  .hero-actions{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;}
+  .trust-row{display:flex;gap:26px;margin-top:38px;flex-wrap:wrap;}
+  .trust-item{font-size:13px;color:var(--ink-soft);display:flex;align-items:center;gap:8px;}
+  .trust-item svg{flex-shrink:0;}
+
+  .ledger{
+    background:var(--indigo-deep);border-radius:18px;overflow:hidden;color:#fff;
+    box-shadow:0 20px 50px -20px rgba(22,31,73,.5);
+  }
+  .ledger-head{
+    padding:18px 22px;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid rgba(255,255,255,.12);
+  }
+  .ledger-title{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#B7BEDD;}
+  .ledger-live{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:#9FF0D4;}
+  .ledger-live .d{width:6px;height:6px;border-radius:50%;background:#33D6A6;animation:pulse 1.6s infinite;}
+  .ledger-body{padding:6px 0;max-height:420px;overflow-y:auto;}
+  .ledger-row{
+    display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;
+    padding:13px 22px;border-bottom:1px solid rgba(255,255,255,.07);
+  }
+  .ledger-row:last-child{border-bottom:none;}
+  .ledger-id{font-family:var(--mono);font-size:11.5px;color:#8B93BD;}
+  .ledger-mid .issue{font-weight:600;font-size:14px;}
+  .ledger-mid .ward{font-family:var(--mono);font-size:11.5px;color:#9AA2C9;margin-top:2px;}
+  .status-pill{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;
+    padding:4px 9px;border-radius:100px;white-space:nowrap;
+  }
+  .status-REPORTED,.status-UNASSIGNED{background:rgba(255,255,255,.12);color:#D7DBEE;}
+  .status-ASSIGNED,.status-ACKNOWLEDGED{background:rgba(201,130,46,.22);color:#F3B872;}
+  .status-IN_PROGRESS{background:rgba(201,130,46,.3);color:#FFC988;}
+  .status-RESOLVED,.status-VERIFIED,.status-CLOSED{background:rgba(51,214,166,.18);color:#7FEBC7;}
+  .status-REOPENED{background:rgba(184,66,47,.25);color:#F0A18F;}
+  .ledger-foot{
+    padding:13px 22px;font-size:12px;color:#8B93BD;border-top:1px solid rgba(255,255,255,.12);
+    display:flex;align-items:center;gap:8px;
+  }
+
+  section{padding:64px 0;border-top:1px solid var(--line);}
+  .section-head{max-width:600px;margin-bottom:36px;}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--indigo);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;}
+  h2{font-family:var(--disp);font-weight:700;font-size:clamp(24px,3vw,32px);letter-spacing:-.01em;}
+  .section-sub{color:var(--ink-soft);margin-top:10px;font-size:15.5px;}
+
+  .domain-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+  @media (max-width:900px){.domain-grid{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:520px){.domain-grid{grid-template-columns:1fr;}}
+  .domain-card{background:var(--paper-raised);padding:26px 22px;}
+  .domain-card .n{font-family:var(--mono);font-size:11.5px;color:var(--indigo);}
+  .domain-card h3{font-family:var(--disp);font-size:16.5px;margin:10px 0 6px;}
+  .domain-card p{font-size:13.5px;color:var(--ink-soft);}
+
+  .app-shell{display:none;padding:44px 0 80px;}
+  .app-shell.active{display:block;}
+  .landing-shell.hidden{display:none;}
+
+  .dash-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:32px;}
+  .dash-greeting .k{font-family:var(--mono);font-size:12px;color:var(--indigo);text-transform:uppercase;letter-spacing:.05em;}
+  .dash-greeting h2{margin-top:6px;}
+
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:36px;}
+  @media (max-width:760px){.stat-row{grid-template-columns:repeat(2,1fr);}}
+  .stat-card{background:var(--paper-raised);border:1px solid var(--line);border-radius:12px;padding:18px 20px;}
+  .stat-card .num{font-family:var(--disp);font-weight:700;font-size:26px;}
+  .stat-card .lab{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+
+  .panel{background:var(--paper-raised);border:1px solid var(--line);border-radius:16px;padding:26px;margin-bottom:24px;}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+  .panel-head h3{font-family:var(--disp);font-size:17px;}
+
+  .report-list{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .report-row{background:var(--paper-raised);padding:16px 18px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;}
+  .report-row .issue{font-weight:600;font-size:14.5px;}
+  .report-row .meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
+  .empty-state{padding:34px 20px;text-align:center;color:var(--ink-soft);font-size:14px;}
+  .empty-state .big{font-family:var(--disp);font-size:15px;color:var(--ink);margin-bottom:6px;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink);}
+  .field .hint{font-size:12px;color:var(--ink-soft);margin-top:5px;}
+  input,select,textarea{
+    width:100%;font-family:var(--body);font-size:14.5px;padding:11px 13px;
+    border:1.5px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink);
+    transition:border-color .15s;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--indigo);outline:none;}
+  textarea{resize:vertical;min-height:80px;}
+  .form-row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:520px){.form-row2{grid-template-columns:1fr;}}
+  .form-error{background:var(--red-tint);color:var(--red);border-radius:8px;padding:10px 13px;font-size:13.5px;margin-bottom:14px;display:none;}
+  .form-error.show{display:block;}
+  .form-success{background:var(--teal-tint);color:var(--teal);border-radius:8px;padding:10px 13px;font-size:13.5px;margin-bottom:14px;display:none;}
+  .form-success.show{display:block;}
+  .privacy-note{
+    display:flex;gap:10px;background:var(--indigo-tint);border-radius:9px;padding:12px 14px;
+    font-size:12.5px;color:var(--indigo-deep);margin-top:6px;line-height:1.5;
+  }
+
+  .modal-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(16,24,40,.55);z-index:100;
+    align-items:flex-start;justify-content:center;padding:60px 20px;overflow-y:auto;
+  }
+  .modal-backdrop.active{display:flex;}
+  .modal{
+    background:var(--paper-raised);border-radius:18px;max-width:440px;width:100%;padding:30px;
+    animation:modalin .2s ease;
+  }
+  @keyframes modalin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .modal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+  .modal-head h3{font-family:var(--disp);font-size:20px;}
+  .modal-close{background:none;border:none;color:var(--ink-soft);font-size:20px;line-height:1;padding:4px;}
+  .modal-sub{color:var(--ink-soft);font-size:13.5px;margin-bottom:22px;}
+  .modal-switch{text-align:center;font-size:13.5px;color:var(--ink-soft);margin-top:16px;}
+  .modal-switch button{color:var(--indigo);font-weight:600;background:none;border:none;}
+  .modal.wide{max-width:560px;}
+
+  .full-btn{width:100%;justify-content:center;}
+
+  /* ---- Homepage-only additions: stat bar + how-it-works ---- */
+  .statbar{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    margin-top:44px;
+  }
+  @media (max-width:760px){.statbar{grid-template-columns:repeat(2,1fr);}}
+  .statbar-cell{background:var(--paper-raised);padding:22px 22px;}
+  .statbar-cell .num{font-family:var(--disp);font-weight:700;font-size:28px;letter-spacing:-.01em;}
+  .statbar-cell .lab{font-size:12.5px;color:var(--ink-soft);margin-top:4px;}
+
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+  @media (max-width:900px){.steps{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:520px){.steps{grid-template-columns:1fr;}}
+  .step-card{position:relative;padding-top:6px;}
+  .step-num{
+    font-family:var(--disp);font-weight:700;font-size:34px;color:var(--indigo-tint);
+    -webkit-text-stroke:1.5px var(--indigo);line-height:1;margin-bottom:14px;
+  }
+  .step-card h3{font-family:var(--disp);font-size:16px;margin-bottom:7px;}
+  .step-card p{font-size:13.5px;color:var(--ink-soft);}
+  .step-arrow{display:none;}
+  @media (min-width:900px){
+    .step-card:not(:last-child)::after{
+      content:"";position:absolute;top:16px;right:-20px;width:16px;height:1.5px;
+      background:var(--line);
+    }
+  }
+
+  .cta-band{
+    background:var(--indigo-deep);border-radius:20px;padding:48px 40px;
+    display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;color:#fff;
+  }
+  .cta-band h2{color:#fff;}
+  .cta-band p{color:#B7BEDD;margin-top:8px;font-size:14.5px;max-width:420px;}
+  .cta-band .btn-solid{background:#fff;color:var(--indigo-deep);}
+  .cta-band .btn-solid:hover{background:#EDEFF7;}
+  .cta-band .btn-ghost{border-color:rgba(255,255,255,.4);color:#fff;}
+  .cta-band .btn-ghost:hover{background:rgba(255,255,255,.12);}
+
+  footer.rich{border-top:1px solid var(--line);padding:52px 0 32px;margin-top:20px;}
+  .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:36px;margin-bottom:36px;}
+  @media (max-width:760px){.footer-grid{grid-template-columns:1fr 1fr;}}
+  .footer-col h4{font-family:var(--disp);font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);margin-bottom:14px;}
+  .footer-col a{display:block;font-size:13.5px;color:var(--ink);margin-bottom:9px;}
+  .footer-col a:hover{color:var(--indigo);}
+  .footer-brand{font-family:var(--disp);font-weight:700;font-size:18px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .footer-brand-desc{font-size:13.5px;color:var(--ink-soft);max-width:280px;line-height:1.6;}
+  .footer-bottom{border-top:1px solid var(--line);padding-top:22px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--ink-soft);}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/">
+      <span class="mark"></span>
+      CivicConnect
+    </a>
+    <nav class="navlinks">
+      <a href="/">Home</a>
+      <a href="/report/">Report an issue</a>
+      <a href="/my-reports/">My reports</a>
+    </nav>
+    <div class="navactions" id="civic-nav-actions"></div>
+  </div>
+</header>
+
+<main class="wrap" style="padding:44px 0 60px;">
+
+<section class="hero" style="border-top:none;padding-top:10px;">
+  <div class="hero-grid">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> Delhi NCR &middot; Live pilot</div>
+      <h1>Report it once.<br>We find <span class="accent">who&rsquo;s responsible.</span></h1>
+      <p class="lede">Potholes, garbage, water leaks, streetlights &mdash; you don&rsquo;t need to know
+      whether it&rsquo;s MCD, MCG, PWD or NHAI. CivicConnect works that out automatically,
+      assigns a deadline, and tracks it until it&rsquo;s actually fixed.</p>
+      <div class="hero-actions">
+        <a class="btn btn-solid" href="/report/">Report an issue</a>
+        <a class="btn btn-ghost" href="/register/">Create an account</a>
+      </div>
+      <div class="trust-row">
+        <div class="trust-item">No account required to report</div>
+        <div class="trust-item">SLA deadline shown per complaint</div>
+        <div class="trust-item">Full public status ledger</div>
+      </div>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-head">
+        <span class="ledger-title">Public Ledger</span>
+        <span class="ledger-live"><span class="d"></span> Live</span>
+      </div>
+      <div class="ledger-body" id="ledger-body">
+        <div class="empty-state">Loading recent reports&hellip;</div>
+      </div>
+      <div class="ledger-foot">Reporter identity is never shown publicly.</div>
+    </div>
+  </div>
+
+  <div class="statbar" id="statbar">
+    <div class="statbar-cell"><div class="num" id="statTotalNum">—</div><div class="lab">Reports filed</div></div>
+    <div class="statbar-cell"><div class="num" id="statResolvedNum">—</div><div class="lab">Marked resolved</div></div>
+    <div class="statbar-cell"><div class="num" id="statWardsNum">—</div><div class="lab">Wards covered</div></div>
+    <div class="statbar-cell"><div class="num" id="statAuthNum">—</div><div class="lab">Authorities connected</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="kicker">How it works</div>
+    <h2>From report to resolution, tracked the whole way</h2>
+    <p class="section-sub">No phone calls, no guessing which office to visit. Four steps, all visible to you as they happen.</p>
+  </div>
+  <div class="steps">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <h3>Report the problem</h3>
+      <p>Describe the issue and drop a pin. No account needed — reporting anonymously is always supported.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <h3>We find who's responsible</h3>
+      <p>The jurisdiction engine checks your ward and road ownership, then assigns the correct authority and department automatically.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <h3>A deadline gets set</h3>
+      <p>Every report gets an SLA — a real deadline the responsible authority is expected to meet, visible to you from the start.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04</div>
+      <h3>You see it through</h3>
+      <p>Track status on the public ledger or your dashboard, right up to resolution — no need to chase anyone for an update.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="cta-band">
+    <div>
+      <h2>Your report becomes public record.</h2>
+      <p>Every complaint enters a transparent, timestamped ledger — visible to anyone, traceable by no one back to you unless you choose otherwise.</p>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <a class="btn btn-solid" href="/report/">Report an issue</a>
+      <a class="btn btn-ghost" href="/register/">Create an account</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="kicker">Platform scope</div>
+    <h2>Available now &mdash; and what&rsquo;s planned</h2>
+    <p class="section-sub">CivicConnect&rsquo;s civic-infrastructure reporting is live today.
+    Healthcare monitoring, the blood-bank network, and e-waste tracking are part of the
+    long-term platform vision and are not yet functional &mdash; we&rsquo;re being upfront about that.</p>
+  </div>
+  <div class="domain-grid">
+    <div class="domain-card">
+      <div class="n">01 &middot; LIVE</div>
+      <h3>Civic infrastructure</h3>
+      <p>Potholes, garbage, water leaks, streetlights &mdash; routed to the correct authority automatically.</p>
+    </div>
+    <div class="domain-card">
+      <div class="n">02 &middot; PLANNED</div>
+      <h3>Healthcare monitoring</h3>
+      <p>Unannounced facility ratings on cleanliness, staffing, and equipment.</p>
+    </div>
+    <div class="domain-card">
+      <div class="n">03 &middot; PLANNED</div>
+      <h3>Blood bank network</h3>
+      <p>Hospitals report shortages; opt-in donors get matched privately.</p>
+    </div>
+    <div class="domain-card">
+      <div class="n">04 &middot; PLANNED</div>
+      <h3>Waste &amp; e-waste</h3>
+      <p>Verified recycler network with digital disposal certificates.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="rich">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand"><span class="mark"></span>CivicConnect</div>
+        <p class="footer-brand-desc">A public accountability platform. You report the problem — we find who's responsible, set a deadline, and track it until it's actually fixed.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="/report/">Report an issue</a>
+        <a href="/#ledger">Public ledger</a>
+        <a href="/dashboard/">Dashboard</a>
+        <a href="/my-reports/">My reports</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="/login/">Log in</a>
+        <a href="/register/">Create account</a>
+        <a href="/profile/">Profile</a>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <a href="/#domains">Roadmap &amp; scope</a>
+        <a href="https://api.kashnet.online/api/wards" target="_blank" rel="noopener">Ward coverage</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>CivicConnect &mdash; a civic accountability platform, built for FOCP-II.</span>
+      <span>Reporter identity is never shown publicly, on any page.</span>
+    </div>
+  </div>
+</footer>
+
+
+<script>
+
+// ============================================================
+// CivicConnect shared frontend logic.
+// Paste this identically into every page's Custom HTML block,
+// right before </body> (or anywhere after the page markup).
+// It has no dependency on any other file — fully self-contained.
+// ============================================================
+(function () {
+  const API_BASE = 'https://api.kashnet.online';
+  const TOKEN_KEY = 'civic_token';
+  const USER_KEY = 'civic_user';
+
+  // ---- session storage helpers ----
+  // Using localStorage only to hold the JWT + cached profile — NOT as a
+  // substitute for real auth. Every protected call still round-trips to
+  // the backend, which validates the JWT itself; nothing here is trusted
+  // on its own.
+  function getToken() { return localStorage.getItem(TOKEN_KEY); }
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch (e) { return null; }
+  }
+  function setSession(token, user) {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  }
+  function clearSession() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  }
+  function isLoggedIn() { return !!getToken(); }
+
+  // ---- central fetch helper ----
+  // Automatically attaches the JWT if we have one. On a 401 from a
+  // protected endpoint, clears the stale session and bounces to /login/.
+  async function apiFetch(path, options = {}) {
+    const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+    const token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const res = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+
+    if (res.status === 401) {
+      clearSession();
+      // Only force a redirect for pages that actually require login —
+      // callers on public pages (e.g. the report form for a logged-out
+      // visitor) should check res.ok themselves instead of relying on this.
+      if (window.CIVIC_REQUIRE_AUTH) {
+        window.location.href = '/login/';
+      }
+    }
+
+    let data = null;
+    try { data = await res.json(); } catch (e) { /* no body */ }
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  // ---- shared nav rendering ----
+  // Call this once per page inside an element with id="civic-nav-actions".
+  // Swaps between "Log in / Create account" and "Dashboard / Log out"
+  // depending on session state.
+  function renderNavActions(el) {
+    if (!el) return;
+    if (isLoggedIn()) {
+      const user = getUser();
+      el.innerHTML =
+        '<a class="btn btn-text" href="/dashboard/">' + (user && user.fullName ? user.fullName.split(' ')[0] : 'Dashboard') + '</a>' +
+        '<button class="btn btn-ghost btn-sm" id="civic-logout-btn">Log out</button>' +
+        '<a class="btn btn-solid" href="/report/">Report an issue</a>';
+      const logoutBtn = document.getElementById('civic-logout-btn');
+      if (logoutBtn) logoutBtn.addEventListener('click', function () {
+        clearSession();
+        window.location.href = '/';
+      });
+    } else {
+      el.innerHTML =
+        '<a class="btn btn-text" href="/login/">Log in</a>' +
+        '<a class="btn btn-ghost" href="/register/">Create account</a>' +
+        '<a class="btn btn-solid" href="/report/">Report an issue</a>';
+    }
+  }
+
+  // ---- small utilities pages reuse ----
+  function statusLabel(status) {
+    return (status || '').replace(/_/g, ' ');
+  }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) +
+      ' · ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+  function slaRemaining(iso) {
+    if (!iso) return null;
+    const diffMs = new Date(iso).getTime() - Date.now();
+    const hrs = Math.round(diffMs / 3600000);
+    if (hrs < 0) return { breached: true, text: Math.abs(hrs) + 'h over SLA' };
+    return { breached: false, text: hrs + 'h remaining' };
+  }
+
+  // Expose everything under one global so page scripts can use it.
+  window.CivicApp = {
+    API_BASE, getToken, getUser, setSession, clearSession, isLoggedIn,
+    apiFetch, renderNavActions, statusLabel, fmtDate, slaRemaining
+  };
+})();
+
+</script>
+<script>
+
+document.addEventListener('DOMContentLoaded', async function () {
+  CivicApp.renderNavActions(document.getElementById('civic-nav-actions'));
+
+  const ledgerBody = document.getElementById('ledger-body');
+  // Uses the public feed, not the officer-only /api/complaints — the
+  // latter now requires an OFFICER/ADMIN role and would 403 for every
+  // logged-out visitor viewing the homepage.
+  const { ok, data } = await CivicApp.apiFetch('/api/complaints/public');
+  if (!ok || !Array.isArray(data) || data.length === 0) {
+    ledgerBody.innerHTML = '<div class="empty-state">No reports yet. Be the first.</div>';
+    ['statTotalNum','statResolvedNum','statWardsNum','statAuthNum'].forEach(function (id) {
+      document.getElementById(id).textContent = '0';
+    });
+    return;
+  }
+
+  // Stat bar computed from the same real feed — no hardcoded numbers.
+  // Note: /api/complaints/public is capped at 50 most-recent results
+  // server-side, so on a real deployment with heavy traffic these stats
+  // reflect "recent activity," not a lifetime total. Fine for a hackathon
+  // pilot; a true all-time counter would need its own backend endpoint.
+  const total = data.length;
+  const resolved = data.filter(function (c) { return ['RESOLVED', 'VERIFIED', 'CLOSED'].indexOf(c.status) !== -1; }).length;
+  const wards = new Set(data.map(function (c) { return c.wardName; }).filter(Boolean)).size;
+  const authorities = new Set(data.map(function (c) { return c.authorityName; }).filter(Boolean)).size;
+  document.getElementById('statTotalNum').textContent = total;
+  document.getElementById('statResolvedNum').textContent = resolved;
+  document.getElementById('statWardsNum').textContent = wards;
+  document.getElementById('statAuthNum').textContent = authorities;
+
+  const recent = data.slice(-8).reverse();
+  ledgerBody.innerHTML = recent.map(function (c) {
+    return '<div class="ledger-row">' +
+      '<div class="ledger-id">#' + String(c.id).padStart(4, '0') + '</div>' +
+      '<div class="ledger-mid">' +
+        '<div class="issue">' + escapeHtml(c.issueType) + '</div>' +
+        '<div class="ward">' + escapeHtml(c.wardName || 'Ward pending') + (c.authorityName ? ' &middot; ' + escapeHtml(c.authorityName) : '') + '</div>' +
+      '</div>' +
+      '<span class="status-pill status-' + c.status + '">' + CivicApp.statusLabel(c.status) + '</span>' +
+    '</div>';
+  }).join('');
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m];
+    });
+  }
+});
+
+</script>
+</body>
+</html>

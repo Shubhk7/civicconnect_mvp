@@ -50,6 +50,13 @@ public class Complaint {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    // Nullable — anonymous reports have no owner. Only ever set
+    // server-side from a validated JWT (see ComplaintService#submit);
+    // never trust a client-supplied value for this field. Never
+    // serialize this onto ComplaintResponse — it's public-facing.
+    @Column(name = "reported_by_user_id")
+    private Integer reportedByUserId;
+
     // --- getters / setters ---
     public Integer getId() { return id; }
 
@@ -89,4 +96,7 @@ public class Complaint {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Integer getReportedByUserId() { return reportedByUserId; }
+    public void setReportedByUserId(Integer reportedByUserId) { this.reportedByUserId = reportedByUserId; }
 }

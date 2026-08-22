@@ -13,6 +13,8 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Integer> {
 
     List<Complaint> findByStatus(String status);
 
+    List<Complaint> findByReportedByUserIdOrderByCreatedAtDesc(Integer reportedByUserId);
+
     // Duplicate check: same issue type within ~50 meters, still open.
     // ST_DWithin with geography cast gives distance in meters.
     @Query(value =

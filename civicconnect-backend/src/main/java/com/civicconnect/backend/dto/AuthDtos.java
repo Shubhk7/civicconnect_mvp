@@ -57,4 +57,17 @@ public class AuthDtos {
             return r;
         }
     }
+
+    // Returned by /register and /login. Wraps the profile plus the JWT
+    // the frontend must store and send back as "Authorization: Bearer
+    // <token>" on any request that needs to know who the user is.
+    public static class AuthResponse {
+        public UserResponse user;
+        public String token;
+
+        public AuthResponse(UserResponse user, String token) {
+            this.user = user;
+            this.token = token;
+        }
+    }
 }

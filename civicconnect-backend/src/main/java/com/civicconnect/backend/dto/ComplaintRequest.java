@@ -17,6 +17,14 @@ public class ComplaintRequest {
     @NotNull
     private Double lng;
 
+    // If true, the report is never linked to the caller's account even
+    // if they're logged in (a valid JWT was sent). Defaults to false,
+    // meaning a logged-in citizen's reports auto-link unless they opt
+    // out here. Deliberately NOT a userId field — the backend derives
+    // identity from the JWT only; this DTO has no field a client could
+    // use to claim someone else's identity.
+    private boolean anonymous = false;
+
     // getters / setters
     public String getIssueType() { return issueType; }
     public void setIssueType(String issueType) { this.issueType = issueType; }
@@ -28,4 +36,6 @@ public class ComplaintRequest {
     public void setLat(Double lat) { this.lat = lat; }
     public Double getLng() { return lng; }
     public void setLng(Double lng) { this.lng = lng; }
+    public boolean isAnonymous() { return anonymous; }
+    public void setAnonymous(boolean anonymous) { this.anonymous = anonymous; }
 }

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report an Issue — CivicConnect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#101828;
+    --ink-soft:#565F73;
+    --paper:#F6F7F5;
+    --paper-raised:#FFFFFF;
+    --indigo:#24326B;
+    --indigo-deep:#161F49;
+    --indigo-tint:#E7E9F3;
+    --amber:#C9822E;
+    --amber-tint:#FBF0E1;
+    --teal:#0F7A63;
+    --teal-tint:#E3F1EC;
+    --red:#B8422F;
+    --red-tint:#F8E9E5;
+    --line:#DBDED6;
+    --disp:'Space Grotesk',sans-serif;
+    --body:'Inter',sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  img{display:block;max-width:100%;}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 32px;}
+  @media (max-width:640px){.wrap{padding:0 20px;}}
+  :focus-visible{outline:2.5px solid var(--indigo);outline-offset:3px;}
+  ::selection{background:var(--indigo-tint);}
+
+  header{
+    position:sticky;top:0;z-index:60;
+    background:rgba(246,247,245,.92);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:700;font-size:19px;letter-spacing:-.01em;}
+  .brand .mark{width:28px;height:28px;border-radius:7px;background:var(--indigo);position:relative;flex-shrink:0;}
+  .brand .mark::before,.brand .mark::after{content:"";position:absolute;background:var(--paper);}
+  .brand .mark::before{left:7px;right:7px;top:12px;height:4px;border-radius:2px;}
+  .brand .mark::after{top:7px;bottom:7px;left:12px;width:4px;border-radius:2px;}
+  .navlinks{display:flex;gap:30px;font-size:14.5px;color:var(--ink-soft);}
+  .navlinks a:hover{color:var(--ink);}
+  @media (max-width:760px){.navlinks{display:none;}}
+  .navactions{display:flex;gap:10px;align-items:center;}
+  .btn{
+    font-family:var(--body);font-weight:600;font-size:14px;
+    border-radius:9px;padding:10px 18px;border:1.5px solid transparent;
+    transition:transform .12s ease, background .15s, border-color .15s, color .15s;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-solid{background:var(--indigo);color:#fff;}
+  .btn-solid:hover{background:var(--indigo-deep);}
+  .btn-ghost{border-color:var(--indigo);color:var(--indigo);}
+  .btn-ghost:hover{background:var(--indigo);color:#fff;}
+  .btn-text{color:var(--ink-soft);padding:10px 6px;}
+  .btn-text:hover{color:var(--ink);}
+  .btn-sm{padding:7px 13px;font-size:13px;}
+  .btn-danger-outline{border-color:var(--red);color:var(--red);}
+  .btn-danger-outline:hover{background:var(--red);color:#fff;}
+
+  .hero{padding:76px 0 40px;}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:start;}
+  @media (max-width:900px){.hero-grid{grid-template-columns:1fr;gap:40px;}}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);
+    font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--indigo);
+    background:var(--indigo-tint);padding:6px 12px;border-radius:100px;margin-bottom:22px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  h1{font-family:var(--disp);font-weight:700;font-size:clamp(34px,4.6vw,54px);line-height:1.04;letter-spacing:-.02em;}
+  h1 .accent{color:var(--indigo);}
+  .lede{margin-top:20px;font-size:17.5px;color:var(--ink-soft);max-width:480px;}
+  .hero-actions{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;}
+  .trust-row{display:flex;gap:26px;margin-top:38px;flex-wrap:wrap;}
+  .trust-item{font-size:13px;color:var(--ink-soft);display:flex;align-items:center;gap:8px;}
+  .trust-item svg{flex-shrink:0;}
+
+  .ledger{
+    background:var(--indigo-deep);border-radius:18px;overflow:hidden;color:#fff;
+    box-shadow:0 20px 50px -20px rgba(22,31,73,.5);
+  }
+  .ledger-head{
+    padding:18px 22px;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid rgba(255,255,255,.12);
+  }
+  .ledger-title{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#B7BEDD;}
+  .ledger-live{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:#9FF0D4;}
+  .ledger-live .d{width:6px;height:6px;border-radius:50%;background:#33D6A6;animation:pulse 1.6s infinite;}
+  .ledger-body{padding:6px 0;max-height:420px;overflow-y:auto;}
+  .ledger-row{
+    display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;
+    padding:13px 22px;border-bottom:1px solid rgba(255,255,255,.07);
+  }
+  .ledger-row:last-child{border-bottom:none;}
+  .ledger-id{font-family:var(--mono);font-size:11.5px;color:#8B93BD;}
+  .ledger-mid .issue{font-weight:600;font-size:14px;}
+  .ledger-mid .ward{font-family:var(--mono);font-size:11.5px;color:#9AA2C9;margin-top:2px;}
+  .status-pill{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;
+    padding:4px 9px;border-radius:100px;white-space:nowrap;
+  }
+  .status-REPORTED,.status-UNASSIGNED{background:rgba(255,255,255,.12);color:#D7DBEE;}
+  .status-ASSIGNED,.status-ACKNOWLEDGED{background:rgba(201,130,46,.22);color:#F3B872;}
+  .status-IN_PROGRESS{background:rgba(201,130,46,.3);color:#FFC988;}
+  .status-RESOLVED,.status-VERIFIED,.status-CLOSED{background:rgba(51,214,166,.18);color:#7FEBC7;}
+  .status-REOPENED{background:rgba(184,66,47,.25);color:#F0A18F;}
+  .ledger-foot{
+    padding:13px 22px;font-size:12px;color:#8B93BD;border-top:1px solid rgba(255,255,255,.12);
+    display:flex;align-items:center;gap:8px;
+  }
+
+  section{padding:64px 0;border-top:1px solid var(--line);}
+  .section-head{max-width:600px;margin-bottom:36px;}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--indigo);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;}
+  h2{font-family:var(--disp);font-weight:700;font-size:clamp(24px,3vw,32px);letter-spacing:-.01em;}
+  .section-sub{color:var(--ink-soft);margin-top:10px;font-size:15.5px;}
+
+  .domain-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+  @media (max-width:900px){.domain-grid{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:520px){.domain-grid{grid-template-columns:1fr;}}
+  .domain-card{background:var(--paper-raised);padding:26px 22px;}
+  .domain-card .n{font-family:var(--mono);font-size:11.5px;color:var(--indigo);}
+  .domain-card h3{font-family:var(--disp);font-size:16.5px;margin:10px 0 6px;}
+  .domain-card p{font-size:13.5px;color:var(--ink-soft);}
+
+  .app-shell{display:none;padding:44px 0 80px;}
+  .app-shell.active{display:block;}
+  .landing-shell.hidden{display:none;}
+
+  .dash-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:32px;}
+  .dash-greeting .k{font-family:var(--mono);font-size:12px;color:var(--indigo);text-transform:uppercase;letter-spacing:.05em;}
+  .dash-greeting h2{margin-top:6px;}
+
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:36px;}
+  @media (max-width:760px){.stat-row{grid-template-columns:repeat(2,1fr);}}
+  .stat-card{background:var(--paper-raised);border:1px solid var(--line);border-radius:12px;padding:18px 20px;}
+  .stat-card .num{font-family:var(--disp);font-weight:700;font-size:26px;}
+  .stat-card .lab{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+
+  .panel{background:var(--paper-raised);border:1px solid var(--line);border-radius:16px;padding:26px;margin-bottom:24px;}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+  .panel-head h3{font-family:var(--disp);font-size:17px;}
+
+  .report-list{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .report-row{background:var(--paper-raised);padding:16px 18px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;}
+  .report-row .issue{font-weight:600;font-size:14.5px;}
+  .report-row .meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
+  .empty-state{padding:34px 20px;text-align:center;color:var(--ink-soft);font-size:14px;}
+  .empty-state .big{font-family:var(--disp);font-size:15px;color:var(--ink);margin-bottom:6px;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink);}
+  .field .hint{font-size:12px;color:var(--ink-soft);margin-top:5px;}
+  input,select,textarea{
+    width:100%;font-family:var(--body);font-size:14.5px;padding:11px 13px;
+    border:1.5px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink);
+    transition:border-color .15s;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--indigo);outline:none;}
+  textarea{resize:vertical;min-height:80px;}
+  .form-row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:520px){.form-row2{grid-template-columns:1fr;}}
+  .form-error{background:var(--red-tint);color:var(--red);border-radius:8px;padding:10px 13px;font-size:13.5px;margin-bottom:14px;display:none;}
+  .form-error.show{display:block;}
+  .form-success{background:var(--teal-tint);color:var(--teal);border-radius:8px;padding:10px 13px;font-size:13.5px;margin-bottom:14px;display:none;}
+  .form-success.show{display:block;}
+  .privacy-note{
+    display:flex;gap:10px;background:var(--indigo-tint);border-radius:9px;padding:12px 14px;
+    font-size:12.5px;color:var(--indigo-deep);margin-top:6px;line-height:1.5;
+  }
+
+  .modal-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(16,24,40,.55);z-index:100;
+    align-items:flex-start;justify-content:center;padding:60px 20px;overflow-y:auto;
+  }
+  .modal-backdrop.active{display:flex;}
+  .modal{
+    background:var(--paper-raised);border-radius:18px;max-width:440px;width:100%;padding:30px;
+    animation:modalin .2s ease;
+  }
+  @keyframes modalin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .modal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+  .modal-head h3{font-family:var(--disp);font-size:20px;}
+  .modal-close{background:none;border:none;color:var(--ink-soft);font-size:20px;line-height:1;padding:4px;}
+  .modal-sub{color:var(--ink-soft);font-size:13.5px;margin-bottom:22px;}
+  .modal-switch{text-align:center;font-size:13.5px;color:var(--ink-soft);margin-top:16px;}
+  .modal-switch button{color:var(--indigo);font-weight:600;background:none;border:none;}
+  .modal.wide{max-width:560px;}
+
+  .full-btn{width:100%;justify-content:center;}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/">
+      <span class="mark"></span>
+      CivicConnect
+    </a>
+    <nav class="navlinks">
+      <a href="/">Home</a>
+      <a href="/report/">Report an issue</a>
+      <a href="/my-reports/">My reports</a>
+    </nav>
+    <div class="navactions" id="civic-nav-actions"></div>
+  </div>
+</header>
+
+<main class="wrap" style="padding:44px 0 60px;">
+
+<div style="max-width:560px;margin:0 auto;">
+  <div class="kicker">Report an issue</div>
+  <h2>What&rsquo;s the problem?</h2>
+  <p class="section-sub" style="margin-bottom:26px;">No account needed. If you&rsquo;re logged in,
+  this report links to your account by default &mdash; untick the box below to stay anonymous.</p>
+
+  <div class="panel">
+    <div class="form-error" id="report-error"></div>
+    <div class="form-success" id="report-success"></div>
+
+    <form id="report-form">
+      <div class="field">
+        <label for="issueType">Issue type</label>
+        <select id="issueType" required>
+          <option value="">Select an issue type</option>
+          <option value="pothole">Pothole</option>
+          <option value="garbage">Garbage</option>
+          <option value="streetlight">Streetlight</option>
+          <option value="water_leak">Water leak</option>
+          <option value="ewaste">E-waste</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="description">Description</label>
+        <textarea id="description" placeholder="Briefly describe what you're seeing and where."></textarea>
+      </div>
+
+      <div class="field">
+        <label for="photo">Photo (optional)</label>
+        <input type="file" id="photo" accept="image/*">
+        <div class="hint" id="photo-hint">
+          Photo upload isn&rsquo;t wired up to the backend yet &mdash; selecting a file here won&rsquo;t
+          attach it to your report yet. You can still submit without a photo.
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Location</label>
+        <button type="button" class="btn btn-ghost btn-sm" id="locate-btn">Use my location</button>
+        <div class="hint" id="location-status">No location captured yet.</div>
+      </div>
+
+      <div class="field" id="anon-field" style="display:none;">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:500;">
+          <input type="checkbox" id="anonymous-toggle" style="width:auto;">
+          Report anonymously (don&rsquo;t link this to my account)
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-solid full-btn" id="submit-btn">Submit report</button>
+
+      <div class="privacy-note">
+        Your exact identity is never shown on the public ledger &mdash; only the issue, ward,
+        authority, and status are visible to others.
+      </div>
+    </form>
+  </div>
+
+  <div class="panel" id="result-panel" style="display:none;">
+    <div class="panel-head"><h3>Report submitted</h3></div>
+    <div id="result-body"></div>
+  </div>
+</div>
+
+</main>
+
+<footer style="border-top:1px solid var(--line);padding:28px 0;margin-top:40px;">
+  <div class="wrap" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--ink-soft);">
+    <span>CivicConnect &mdash; report it once, we find who&rsquo;s responsible.</span>
+    <span>Public accountability, not just complaint submission.</span>
+  </div>
+</footer>
+
+
+<script>
+
+// ============================================================
+// CivicConnect shared frontend logic.
+// Paste this identically into every page's Custom HTML block,
+// right before </body> (or anywhere after the page markup).
+// It has no dependency on any other file — fully self-contained.
+// ============================================================
+(function () {
+  const API_BASE = 'https://api.kashnet.online';
+  const TOKEN_KEY = 'civic_token';
+  const USER_KEY = 'civic_user';
+
+  // ---- session storage helpers ----
+  // Using localStorage only to hold the JWT + cached profile — NOT as a
+  // substitute for real auth. Every protected call still round-trips to
+  // the backend, which validates the JWT itself; nothing here is trusted
+  // on its own.
+  function getToken() { return localStorage.getItem(TOKEN_KEY); }
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch (e) { return null; }
+  }
+  function setSession(token, user) {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  }
+  function clearSession() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  }
+  function isLoggedIn() { return !!getToken(); }
+
+  // ---- central fetch helper ----
+  // Automatically attaches the JWT if we have one. On a 401 from a
+  // protected endpoint, clears the stale session and bounces to /login/.
+  async function apiFetch(path, options = {}) {
+    const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+    const token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const res = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+
+    if (res.status === 401) {
+      clearSession();
+      // Only force a redirect for pages that actually require login —
+      // callers on public pages (e.g. the report form for a logged-out
+      // visitor) should check res.ok themselves instead of relying on this.
+      if (window.CIVIC_REQUIRE_AUTH) {
+        window.location.href = '/login/';
+      }
+    }
+
+    let data = null;
+    try { data = await res.json(); } catch (e) { /* no body */ }
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  // ---- shared nav rendering ----
+  // Call this once per page inside an element with id="civic-nav-actions".
+  // Swaps between "Log in / Create account" and "Dashboard / Log out"
+  // depending on session state.
+  function renderNavActions(el) {
+    if (!el) return;
+    if (isLoggedIn()) {
+      const user = getUser();
+      el.innerHTML =
+        '<a class="btn btn-text" href="/dashboard/">' + (user && user.fullName ? user.fullName.split(' ')[0] : 'Dashboard') + '</a>' +
+        '<button class="btn btn-ghost btn-sm" id="civic-logout-btn">Log out</button>' +
+        '<a class="btn btn-solid" href="/report/">Report an issue</a>';
+      const logoutBtn = document.getElementById('civic-logout-btn');
+      if (logoutBtn) logoutBtn.addEventListener('click', function () {
+        clearSession();
+        window.location.href = '/';
+      });
+    } else {
+      el.innerHTML =
+        '<a class="btn btn-text" href="/login/">Log in</a>' +
+        '<a class="btn btn-ghost" href="/register/">Create account</a>' +
+        '<a class="btn btn-solid" href="/report/">Report an issue</a>';
+    }
+  }
+
+  // ---- small utilities pages reuse ----
+  function statusLabel(status) {
+    return (status || '').replace(/_/g, ' ');
+  }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) +
+      ' · ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+  function slaRemaining(iso) {
+    if (!iso) return null;
+    const diffMs = new Date(iso).getTime() - Date.now();
+    const hrs = Math.round(diffMs / 3600000);
+    if (hrs < 0) return { breached: true, text: Math.abs(hrs) + 'h over SLA' };
+    return { breached: false, text: hrs + 'h remaining' };
+  }
+
+  // Expose everything under one global so page scripts can use it.
+  window.CivicApp = {
+    API_BASE, getToken, getUser, setSession, clearSession, isLoggedIn,
+    apiFetch, renderNavActions, statusLabel, fmtDate, slaRemaining
+  };
+})();
+
+</script>
+<script>
+
+document.addEventListener('DOMContentLoaded', function () {
+  CivicApp.renderNavActions(document.getElementById('civic-nav-actions'));
+
+  if (CivicApp.isLoggedIn()) {
+    document.getElementById('anon-field').style.display = 'block';
+  }
+
+  let lat = null, lng = null;
+  const locateBtn = document.getElementById('locate-btn');
+  const locationStatus = document.getElementById('location-status');
+
+  locateBtn.addEventListener('click', function () {
+    if (!navigator.geolocation) {
+      locationStatus.textContent = 'Geolocation is not supported by this browser.';
+      return;
+    }
+    locationStatus.textContent = 'Getting your location…';
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+      locationStatus.textContent = 'Location captured (' + lat.toFixed(4) + ', ' + lng.toFixed(4) + ')';
+    }, function () {
+      locationStatus.textContent = 'Could not get your location. Please allow location access and try again.';
+    });
+  });
+
+  const form = document.getElementById('report-form');
+  const errorEl = document.getElementById('report-error');
+  const successEl = document.getElementById('report-success');
+  const submitBtn = document.getElementById('submit-btn');
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    errorEl.className = 'form-error';
+    successEl.className = 'form-success';
+
+    const issueType = document.getElementById('issueType').value;
+    const description = document.getElementById('description').value;
+    const anonymous = document.getElementById('anonymous-toggle').checked;
+
+    if (!issueType) {
+      errorEl.textContent = 'Please select an issue type.';
+      errorEl.className = 'form-error show';
+      return;
+    }
+    if (lat === null || lng === null) {
+      errorEl.textContent = 'Please capture your location before submitting.';
+      errorEl.className = 'form-error show';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+
+    const { ok, data } = await CivicApp.apiFetch('/api/complaints', {
+      method: 'POST',
+      body: JSON.stringify({ issueType, description, lat, lng, anonymous })
+    });
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit report';
+
+    if (!ok) {
+      errorEl.textContent = (data && data.error) || 'Something went wrong submitting your report. Please try again.';
+      errorEl.className = 'form-error show';
+      return;
+    }
+
+    form.style.display = 'none';
+    const resultPanel = document.getElementById('result-panel');
+    const resultBody = document.getElementById('result-body');
+    resultPanel.style.display = 'block';
+
+    if (data.isDuplicate) {
+      resultBody.innerHTML = '<p>' + (data.message || 'A similar report already exists nearby — yours has been added to it.') + '</p>';
+      return;
+    }
+
+    resultBody.innerHTML =
+      '<div class="stat-row" style="grid-template-columns:1fr 1fr;">' +
+        '<div class="stat-card"><div class="num">' + (data.authorityName || 'Pending') + '</div><div class="lab">Authority</div></div>' +
+        '<div class="stat-card"><div class="num">' + (data.department || 'Pending') + '</div><div class="lab">Department</div></div>' +
+      '</div>' +
+      '<p><strong>Ward:</strong> ' + (data.wardName || 'Under review') + '</p>' +
+      '<p><strong>Status:</strong> <span class="status-pill status-' + data.status + '">' + CivicApp.statusLabel(data.status) + '</span></p>' +
+      '<p><strong>SLA deadline:</strong> ' + CivicApp.fmtDate(data.slaDeadline) + '</p>' +
+      '<p style="margin-top:14px;"><a class="btn btn-ghost btn-sm" href="/report-details/?id=' + data.id + '">Track this report</a></p>';
+  });
+});
+
+</script>
+</body>
+</html>

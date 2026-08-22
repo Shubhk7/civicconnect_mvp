@@ -36,7 +36,14 @@ public class ComplaintService {
         this.aiClassificationService = aiClassificationService;
     }
 
-    public ComplaintResponse submit(ComplaintRequest req) {
+    /**
+     * @param authenticatedUserId the caller's user id if a valid JWT was
+     *                            sent, or null for an anonymous/unauthenticated
+     *                            caller. Comes only from JwtAuthFilter — a
+     *                            controller never passes anything the
+     *                            client claimed directly.
+     */
+    public ComplaintResponse submit(ComplaintRequest req, Integer authenticatedUserId) {
         // 0. If a photo was provided, ask the AI service what it thinks the
         // issue is. This never overrides the citizen silently — it's used
         // to cross-check, and if it disagrees strongly we still trust the
@@ -77,6 +84,14 @@ public class ComplaintService {
         complaint.setDescription(req.getDescription());
         complaint.setPhotoUrl(req.getPhotoUrl());
         complaint.setLocation(location);
+
+        // Identity linking: only ever from the validated JWT, and only
+        // if the citizen didn't opt out via "anonymous": true. A logged-in
+        // citizen's reports link by default; anonymous reporting requires
+        // no account at all (authenticatedUserId is simply null then).
+        if (authenticatedUserId != null && !req.isAnonymous()) {
+            complaint.setReportedByUserId(authenticatedUserId);
+        }
 
         if (routing.unresolved) {
             complaint.setStatus("UNASSIGNED");

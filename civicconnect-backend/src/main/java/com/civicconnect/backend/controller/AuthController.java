@@ -1,10 +1,12 @@
 package com.civicconnect.backend.controller;
 
+import com.civicconnect.backend.dto.AuthDtos.AuthResponse;
 import com.civicconnect.backend.dto.AuthDtos.LoginRequest;
 import com.civicconnect.backend.dto.AuthDtos.RegisterRequest;
 import com.civicconnect.backend.dto.AuthDtos.UserResponse;
 import com.civicconnect.backend.model.User;
 import com.civicconnect.backend.service.AuthService;
+import com.civicconnect.backend.service.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,28 +17,25 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtService jwtService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, JwtService jwtService) {
         this.authService = authService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest req) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest req) {
         User user = authService.register(req);
-        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.from(user));
+        String token = jwtService.issueToken(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new AuthResponse(UserResponse.from(user), token));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@Valid @RequestBody LoginRequest req) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
         User user = authService.login(req);
-        // NOTE for MVP: this returns the user's own profile as
-        // confirmation of successful login. It does NOT issue a session
-        // token or JWT yet — every subsequent request is still
-        // unauthenticated. That's fine for a hackathon demo where you
-        // control all traffic, but before any real deployment this needs
-        // token-based auth (e.g. JWT) so the backend can verify who is
-        // making each later request, not just the login request itself.
-        return ResponseEntity.ok(UserResponse.from(user));
+        String token = jwtService.issueToken(user);
+        return ResponseEntity.ok(new AuthResponse(UserResponse.from(user), token));
     }
 
     @ExceptionHandler(AuthService.AuthException.class)

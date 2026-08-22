@@ -24,20 +24,40 @@ public class ComplaintService {
     private final ComplaintRepository complaintRepository;
     private final ComplaintStatusHistoryRepository historyRepository;
     private final JurisdictionService jurisdictionService;
+    private final AiClassificationService aiClassificationService;
 
     public ComplaintService(ComplaintRepository complaintRepository,
                              ComplaintStatusHistoryRepository historyRepository,
-                             JurisdictionService jurisdictionService) {
+                             JurisdictionService jurisdictionService,
+                             AiClassificationService aiClassificationService) {
         this.complaintRepository = complaintRepository;
         this.historyRepository = historyRepository;
         this.jurisdictionService = jurisdictionService;
+        this.aiClassificationService = aiClassificationService;
     }
 
     public ComplaintResponse submit(ComplaintRequest req) {
+        // 0. If a photo was provided, ask the AI service what it thinks the
+        // issue is. This never overrides the citizen silently — it's used
+        // to cross-check, and if it disagrees strongly we still trust the
+        // citizen's selection but note the AI's read for the officer.
+        AiClassificationService.ClassificationResult aiResult =
+            aiClassificationService.classify(req.getPhotoUrl());
+
+        String effectiveIssueType = req.getIssueType();
+        String aiNote = null;
+        if (aiResult.available && aiResult.issueType != null
+            && !aiResult.issueType.equals("unclassified") && !aiResult.issueType.equals("unknown")) {
+            if (!aiResult.issueType.equalsIgnoreCase(effectiveIssueType)) {
+                aiNote = "AI classified this as '" + aiResult.issueType + "' (confidence "
+                    + aiResult.confidence + "), citizen selected '" + effectiveIssueType + "'.";
+            }
+        }
+
         // 1. Duplicate check first — no point routing a report that's
         // already being tracked.
         List<Complaint> nearby = complaintRepository.findNearbyDuplicates(
-            req.getLng(), req.getLat(), req.getIssueType(), DUPLICATE_RADIUS_METERS
+            req.getLng(), req.getLat(), effectiveIssueType, DUPLICATE_RADIUS_METERS
         );
         if (!nearby.isEmpty()) {
             ComplaintResponse resp = ComplaintResponse.from(nearby.get(0));
@@ -48,12 +68,12 @@ public class ComplaintService {
 
         // 2. Jurisdiction routing
         JurisdictionService.RoutingResult routing =
-            jurisdictionService.resolve(req.getLat(), req.getLng(), req.getIssueType(), null);
+            jurisdictionService.resolve(req.getLat(), req.getLng(), effectiveIssueType, null);
 
         Point location = GEOMETRY_FACTORY.createPoint(new Coordinate(req.getLng(), req.getLat()));
 
         Complaint complaint = new Complaint();
-        complaint.setIssueType(req.getIssueType());
+        complaint.setIssueType(effectiveIssueType);
         complaint.setDescription(req.getDescription());
         complaint.setPhotoUrl(req.getPhotoUrl());
         complaint.setLocation(location);
@@ -73,11 +93,17 @@ public class ComplaintService {
         Complaint saved = complaintRepository.save(complaint);
         recordHistory(saved, saved.getStatus(),
             routing.unresolved ? routing.reason : "Auto-routed to " + saved.getAuthorityName());
+        if (aiNote != null) {
+            recordHistory(saved, saved.getStatus(), aiNote);
+        }
 
         ComplaintResponse resp = ComplaintResponse.from(saved);
         resp.message = routing.unresolved
             ? "Could not confidently determine jurisdiction — queued for manual review."
             : "Routed to " + saved.getAuthorityName() + " (" + saved.getDepartment() + ")";
+        if (aiNote != null) {
+            resp.message += " Note: " + aiNote;
+        }
         return resp;
     }
 

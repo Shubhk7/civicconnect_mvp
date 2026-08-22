@@ -50,6 +50,30 @@ CREATE INDEX idx_complaints_location ON complaints USING GIST (location);
 CREATE INDEX idx_complaints_status ON complaints (status);
 CREATE INDEX idx_complaints_ward ON complaints (ward_id);
 
+-- Users: citizens and officials. Passwords are stored as BCrypt hashes,
+-- never plaintext. Email is stored as-is (needed for login/lookup and
+-- notifications) but should be treated as PII — access-controlled, not
+-- publicly exposed via any API response.
+CREATE TABLE users (
+    id              SERIAL PRIMARY KEY,
+    username        VARCHAR(50) UNIQUE NOT NULL,
+    email           VARCHAR(255) UNIQUE NOT NULL,
+    phone_number    VARCHAR(20) UNIQUE,     -- E.164-ish format, e.g. +919876543210
+    password_hash   VARCHAR(255) NOT NULL,  -- BCrypt hash, ~60 chars, stored with room to spare
+    full_name       VARCHAR(150),
+    role            VARCHAR(30) NOT NULL DEFAULT 'CITIZEN', -- CITIZEN, OFFICER, ADMIN
+    ward_id         INTEGER REFERENCES wards(id), -- for OFFICER accounts: which ward they manage
+    created_at      TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_users_email ON users (email);
+CREATE INDEX idx_users_username ON users (username);
+CREATE INDEX idx_users_phone ON users (phone_number);
+
+-- Link complaints to the citizen who filed them (nullable — anonymous
+-- reporting stays supported, per the platform's privacy design).
+ALTER TABLE complaints ADD COLUMN reported_by_user_id INTEGER REFERENCES users(id);
+
 -- Status history: every transition, so the citizen-facing timeline is real
 -- data, not derived guesswork.
 CREATE TABLE complaint_status_history (
@@ -59,3 +83,4 @@ CREATE TABLE complaint_status_history (
     note            TEXT,
     created_at      TIMESTAMP NOT NULL DEFAULT now()
 );
+

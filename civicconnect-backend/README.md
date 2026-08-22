@@ -121,11 +121,64 @@ APP_CORS_ORIGINS=https://civicconnect.pages.dev
 5. If no ward or no mapping matches, the complaint is saved with status
    `UNASSIGNED` for manual review — it never silently drops or guesses
 
+## AI classification (now wired in)
+
+When `photoUrl` is included in a `POST /api/complaints` request, the
+backend downloads that image and forwards it to the AI service's
+`/classify` endpoint before doing anything else. Behavior:
+
+- If the AI service is unreachable, times out, or the image can't be
+  downloaded, submission proceeds normally using the citizen's manually
+  selected `issueType` — classification is a cross-check, not a hard
+  dependency. Nothing breaks if the AI service is down.
+- If the AI's classification disagrees with what the citizen picked, the
+  complaint is still saved using the citizen's selection, but a note is
+  added to the status history and included in the response `message` —
+  useful for officers to spot mismatches, without silently overriding the
+  citizen.
+
+This requires the `ai-service` container to be running (it's included in
+`docker-compose.yml` already if you merged in the snippet from the
+`civicconnect-ai` project).
+
+## User accounts (registration/login) — passwords are hashed with BCrypt
+
+`db/init.sql` includes a `users` table. Passwords are **never** stored in
+plaintext or with a fast hash like SHA-256/MD5 — they go through
+`BCryptPasswordEncoder` (see `SecurityConfig.java`), which:
+- Applies a unique random salt per password automatically (two users with
+  the same password get completely different stored hashes)
+- Is deliberately slow to compute, making brute-force attacks on a leaked
+  database impractical
+- Never round-trips the plaintext password back out — `UserResponse` DTO
+  only exposes `id`, `username`, `email`, `fullName`, `role`; the
+  `passwordHash` field is structurally excluded from every API response
+
+```bash
+# Register
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","email":"test@example.com","password":"password123","fullName":"Test User"}'
+
+# Login
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"usernameOrEmail":"testuser","password":"password123"}'
+```
+
+**Important limitation to know about:** login currently just verifies the
+password and returns the user's profile — it does **not** issue a session
+token or JWT yet. That means there's no way yet for the backend to know
+"who" is making a later request (like submitting a complaint) beyond this
+one login call. This is fine for a hackathon demo where you control all
+traffic, but before any real deployment, this needs proper token-based
+auth (JWT is the standard choice) so subsequent requests can be
+authenticated too — flag this if you want it built next.
+
 ## Next steps (not yet built)
 
-- AI classification service (Python) — currently the frontend/citizen
-  selects issue type manually
-- OpenCV before/after verification — `after_photo_url` field exists,
-  verification logic doesn't yet
+- OpenCV before/after verification — `after_photo_url` field exists and the
+  AI service has a `/verify` endpoint ready; the backend doesn't call it
+  automatically yet on `/resolve`
 - Auth (citizen/officer login) — currently open, fine for a demo
 - SLA breach auto-escalation job

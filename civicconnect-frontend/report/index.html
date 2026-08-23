@@ -290,6 +290,7 @@
           <option value="streetlight">Streetlight</option>
           <option value="water_leak">Water leak</option>
           <option value="ewaste">E-waste</option>
+          <option value="ev_charger">EV charger / station</option>
         </select>
       </div>
 
@@ -512,6 +513,22 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   let lat = null, lng = null;
+  const params = new URLSearchParams(window.location.search);
+  const preType = params.get('issueType');
+  if (preType) {
+    const sel = document.getElementById('issueType');
+    if (sel) sel.value = preType;
+  }
+  if (params.get('station')) {
+    const desc = document.getElementById('description');
+    if (desc && !desc.value) desc.value = 'Problem at EV station: ' + params.get('station') + '\n';
+  }
+  if (params.get('lat') && params.get('lng')) {
+    lat = parseFloat(params.get('lat'));
+    lng = parseFloat(params.get('lng'));
+    document.getElementById('location-status').textContent =
+      'Location from EV station (' + lat.toFixed(4) + ', ' + lng.toFixed(4) + ')';
+  }
   const locateBtn = document.getElementById('locate-btn');
   const locationStatus = document.getElementById('location-status');
 
@@ -655,6 +672,11 @@ document.addEventListener('DOMContentLoaded', function () {
       '</p>' +
       '<p style="margin-top:8px;"><strong>SLA deadline:</strong> ' + CivicApp.fmtDate(data.slaDeadline) + '</p>' +
       '<p style="margin-top:4px;color:var(--ink-soft);font-size:13px;">Escalation is automatic if this is not resolved by the deadline — no need to follow up yourself.</p>' +
+      (data.aiAvailable && data.aiIssueType
+        ? '<p style="margin-top:12px;font-size:13.5px;background:var(--indigo-tint);color:var(--indigo-deep);border-radius:9px;padding:12px 14px;">AI assessment: <strong>' + data.aiIssueType + '</strong>' +
+          (data.aiConfidence != null ? ' (confidence ' + Math.round(data.aiConfidence * 100) + '%)' : '') +
+          '. This is an assistive check only — it does not override your selected issue type and is not a legal finding.</p>'
+        : '') +
       '<p style="margin-top:14px;"><a class="btn btn-ghost btn-sm" href="/report-details/?id=' + data.id + '">Track this report</a></p>';
   });
 });

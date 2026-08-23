@@ -338,18 +338,26 @@
 <main>
   <div class="wrap" style="padding-top:44px;">
     <div class="section-head">
-      <div class="kicker">EV stations</div>
-      <h2>EV charging near you</h2>
-      <p class="section-sub">Public charging points around Chhawla &amp; nearby Delhi&ndash;Gurugram areas. Tap a pin for details, or the address to open directions.</p>
+      <div class="kicker">EV infrastructure</div>
+      <h2>Public charging network</h2>
+      <p class="section-sub">Stations around Chhawla and nearby Delhi–Gurugram. Status is a demo seed (operational / limited / offline). Reporting a station problem uses the same accountability pipeline as any other civic issue.</p>
+    </div>
+
+    <div class="map-legend" style="margin-bottom:16px;">
+      <span><span class="dot" style="background:#0F7A63"></span>Operational</span>
+      <span><span class="dot" style="background:#C9822E"></span>Limited</span>
+      <span><span class="dot" style="background:#B8422F"></span>Offline</span>
     </div>
 
     <div class="map-shell"><div id="map"></div></div>
 
-    <div class="map-legend">
+    <div class="map-legend" style="margin-top:16px;">
       <span><span class="dot" style="background:#0F7A63"></span>DC fast charger</span>
       <span><span class="dot" style="background:#24326B"></span>AC charger</span>
       <span><span class="dot" style="background:#C9822E"></span>Battery swap</span>
     </div>
+
+    <div id="station-lists" style="margin-top:28px;"></div>
 
     <p class="section-sub" style="margin-top:18px;font-size:12.5px;">
       Approximate demo locations for testing &mdash; not live pricing or slot availability.
@@ -504,18 +512,18 @@
   // approach used for the ward boundaries: good enough to test against,
   // clearly not a production data source.
   const EV_STATIONS = [
-    { name: 'Tata Power — Vegas Mall, Dwarka', operator: 'Tata Power / Statiq', type: 'DC', lat: 28.5807, lng: 77.0552, address: 'Vegas Mall, Sector 14, Dwarka, Delhi' },
-    { name: 'EESL Charging Point, Bamnoli Village', operator: 'EESL', type: 'AC', lat: 28.5691, lng: 77.0396, address: 'Road No. 116, Bamnoli Village, Sector 28, Dwarka' },
-    { name: 'Tata Power — Emerald Bay, Dwarka Expressway', operator: 'Tata Power / Statiq', type: 'DC', lat: 28.5265, lng: 77.0503, address: 'Emerald Bay, Sector 104, Dwarka Expressway, Gurugram' },
-    { name: 'Statiq Point, Sector 29 Market', operator: 'Statiq', type: 'AC', lat: 28.4622, lng: 77.0965, address: 'Leisure Valley Park, City Centre, Sector 29, Gurugram' },
-    { name: 'IOCL Fuel + EV Point, Najafgarh Road', operator: 'IOCL', type: 'DC', lat: 28.6098, lng: 76.9887, address: 'Najafgarh Road Industrial Area, New Delhi' },
-    { name: 'Croma Store Charger, Rajouri Garden', operator: 'Tata Power', type: 'AC', lat: 28.6459, lng: 77.1195, address: 'Rama Rd, Najafgarh Road Industrial Area, New Delhi' },
-    { name: 'Charging Point, Kapashera Border', operator: 'Statiq', type: 'AC', lat: 28.5486, lng: 77.0834, address: 'NH-48 service road, Kapashera, Delhi–Gurugram border' },
-    { name: 'Charging Point, Bijwasan Rly Station Rd', operator: 'ChargeZone', type: 'DC', lat: 28.5677, lng: 77.0217, address: 'Bijwasan Road, near Bijwasan Railway Station, Delhi' },
-    { name: 'Battery Swap Point, Chhawla Village', operator: 'Sun Mobility', type: 'SWAP', lat: 28.5614, lng: 77.0020, address: 'Main Chhawla Road, Chhawla, Delhi' },
-    { name: 'Charging Point, Dindarpur', operator: 'Statiq', type: 'AC', lat: 28.5545, lng: 76.9938, address: 'Dindarpur village road, near Chhawla, Delhi' },
-    { name: 'Charging Point, Jhuljhuli', operator: 'Tata Power', type: 'AC', lat: 28.5432, lng: 76.9871, address: 'Jhuljhuli village, off Najafgarh–Chhawla road' },
-    { name: 'IGI Airport Cargo Rd EV Point', operator: 'IOCL', type: 'DC', lat: 28.5556, lng: 77.1000, address: 'Cargo Road, near IGI Airport, New Delhi' }
+    { name: 'Tata Power — Vegas Mall, Dwarka', operator: 'Tata Power / Statiq', type: 'DC', status: 'operational', lat: 28.5807, lng: 77.0552, address: 'Vegas Mall, Sector 14, Dwarka, Delhi' },
+    { name: 'EESL Charging Point, Bamnoli Village', operator: 'EESL', type: 'AC', status: 'limited', lat: 28.5691, lng: 77.0396, address: 'Road No. 116, Bamnoli Village, Sector 28, Dwarka' },
+    { name: 'Tata Power — Emerald Bay, Dwarka Expressway', operator: 'Tata Power / Statiq', type: 'DC', status: 'operational', lat: 28.5265, lng: 77.0503, address: 'Emerald Bay, Sector 104, Dwarka Expressway, Gurugram' },
+    { name: 'Statiq Point, Sector 29 Market', operator: 'Statiq', type: 'AC', status: 'operational', lat: 28.4622, lng: 77.0965, address: 'Leisure Valley Park, City Centre, Sector 29, Gurugram' },
+    { name: 'IOCL Fuel + EV Point, Najafgarh Road', operator: 'IOCL', type: 'DC', status: 'offline', lat: 28.6098, lng: 76.9887, address: 'Najafgarh Road Industrial Area, New Delhi' },
+    { name: 'Croma Store Charger, Rajouri Garden', operator: 'Tata Power', type: 'AC', status: 'operational', lat: 28.6459, lng: 77.1195, address: 'Rama Rd, Najafgarh Road Industrial Area, New Delhi' },
+    { name: 'Charging Point, Kapashera Border', operator: 'Statiq', type: 'AC', status: 'limited', lat: 28.5486, lng: 77.0834, address: 'NH-48 service road, Kapashera, Delhi–Gurugram border' },
+    { name: 'Charging Point, Bijwasan Rly Station Rd', operator: 'ChargeZone', type: 'DC', status: 'operational', lat: 28.5677, lng: 77.0217, address: 'Bijwasan Road, near Bijwasan Railway Station, Delhi' },
+    { name: 'Battery Swap Point, Chhawla Village', operator: 'Sun Mobility', type: 'SWAP', status: 'operational', lat: 28.5614, lng: 77.0020, address: 'Main Chhawla Road, Chhawla, Delhi' },
+    { name: 'Charging Point, Dindarpur', operator: 'Statiq', type: 'AC', status: 'offline', lat: 28.5545, lng: 76.9938, address: 'Dindarpur village road, near Chhawla, Delhi' },
+    { name: 'Charging Point, Jhuljhuli', operator: 'Tata Power', type: 'AC', status: 'limited', lat: 28.5432, lng: 76.9871, address: 'Jhuljhuli village, off Najafgarh–Chhawla road' },
+    { name: 'IGI Airport Cargo Rd EV Point', operator: 'IOCL', type: 'DC', status: 'operational', lat: 28.5556, lng: 77.1000, address: 'Cargo Road, near IGI Airport, New Delhi' }
   ];
 
   function colorForType(t) {
@@ -528,6 +536,20 @@
     if (t === 'SWAP') return 'Battery swap';
     return 'AC charger';
   }
+  function colorForStatus(s) {
+    if (s === 'operational') return '#0F7A63';
+    if (s === 'limited') return '#C9822E';
+    return '#B8422F';
+  }
+  function labelForStatus(s) {
+    if (s === 'operational') return 'Operational';
+    if (s === 'limited') return 'Limited';
+    return 'Offline';
+  }
+  function reportUrl(s) {
+    return '/report/?issueType=ev_charger&lat=' + encodeURIComponent(s.lat) +
+      '&lng=' + encodeURIComponent(s.lng) + '&station=' + encodeURIComponent(s.name);
+  }
 
   function loadMap() {
     const map = L.map('map').setView([28.5614, 77.0020], 13);
@@ -539,7 +561,7 @@
     const bounds = [];
     EV_STATIONS.forEach(function (s) {
       bounds.push([s.lat, s.lng]);
-      const color = colorForType(s.type);
+      const color = colorForStatus(s.status);
       const marker = L.circleMarker([s.lat, s.lng], {
         radius: 8,
         color: color,
@@ -551,17 +573,35 @@
       const mapsUrl = 'https://www.google.com/maps?q=' + s.lat + ',' + s.lng;
       marker.bindPopup(
         '<div class="popup-issue">' + s.name + '</div>' +
-        '<div class="popup-meta">' + s.operator + '</div>' +
+        '<div class="popup-meta">' + s.operator + ' · ' + labelForType(s.type) + '</div>' +
         '<div class="popup-meta" style="margin-top:4px;">' +
           '<a href="' + mapsUrl + '" target="_blank" rel="noopener" style="color:var(--indigo);text-decoration:underline;">' + s.address + '</a>' +
         '</div>' +
-        '<span class="popup-badge" style="background:' + color + '22;color:' + color + '">' + labelForType(s.type) + '</span>'
+        '<span class="popup-badge" style="background:' + color + '22;color:' + color + '">' + labelForStatus(s.status) + '</span>' +
+        '<div style="margin-top:10px;"><a class="btn btn-solid btn-sm" href="' + reportUrl(s) + '">Report a station problem</a></div>'
       );
     });
 
     if (bounds.length > 0) {
       map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
     }
+
+    const groups = { operational: [], limited: [], offline: [] };
+    EV_STATIONS.forEach(function (s) { groups[s.status].push(s); });
+    const listEl = document.getElementById('station-lists');
+    listEl.innerHTML = ['operational','limited','offline'].map(function (key) {
+      const items = groups[key];
+      return '<div class="panel" style="margin-top:16px;">' +
+        '<div class="panel-head"><h3>' + labelForStatus(key) + ' <span style="font-family:var(--mono);font-size:12px;color:var(--ink-soft);">(' + items.length + ')</span></h3></div>' +
+        items.map(function (s) {
+          return '<div class="report-row" style="margin-bottom:1px;">' +
+            '<div><div class="issue">' + s.name + '</div>' +
+            '<div class="meta">' + s.address + ' · ' + labelForType(s.type) + '</div></div>' +
+            '<a class="btn btn-ghost btn-sm" href="' + reportUrl(s) + '">Report a problem</a>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+    }).join('');
   }
 
   loadMap();

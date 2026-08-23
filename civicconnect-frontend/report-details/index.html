@@ -202,7 +202,14 @@
   .report-row .issue{font-weight:600;font-size:14.5px;}
   .report-row .meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
   .empty-state{padding:34px 20px;text-align:center;color:var(--ink-soft);font-size:14px;}
-  .empty-state .big{font-family:var(--disp);font-size:15px;color:var(--ink);margin-bottom:6px;}
+  .photo-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;}
+  @media (max-width:520px){.photo-pair{grid-template-columns:1fr;}}
+  .photo-pair figure{margin:0;}
+  .photo-pair img{width:100%;border-radius:10px;border:1px solid var(--line);max-height:220px;object-fit:cover;}
+  .photo-pair figcaption{font-size:12px;color:var(--ink-soft);margin-top:6px;}
+  .ai-box{margin-top:18px;background:var(--indigo-tint);border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--indigo-deep);line-height:1.5;}
+  .ai-box .disc{font-size:12px;color:var(--ink-soft);margin-top:8px;}
+  .status-AWAITING_VERIFICATION{background:var(--indigo-tint);color:var(--indigo);}
 
   .field{margin-bottom:16px;}
   .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink);}
@@ -497,6 +504,34 @@ document.addEventListener('DOMContentLoaded', async function () {
       '<div><div class="hint">SLA deadline</div><div>' + CivicApp.fmtDate(c.slaDeadline) + '</div></div>' +
       '<div><div class="hint">Residents affected</div><div>' + (c.affectedCount || 1) + '</div></div>' +
     '</div>';
+
+  var photos = '';
+  if (c.photoUrl || c.afterPhotoUrl) {
+    photos = '<div class="photo-pair">';
+    if (c.photoUrl) photos += '<figure><img src="' + c.photoUrl + '" alt="Before"><figcaption>Before</figcaption></figure>';
+    if (c.afterPhotoUrl) photos += '<figure><img src="' + c.afterPhotoUrl + '" alt="After"><figcaption>After</figcaption></figure>';
+    photos += '</div>';
+  }
+  var aiBlock = '';
+  if (c.verificationVerdict || c.status === 'AWAITING_VERIFICATION') {
+    var pct = c.verificationConfidence != null ? Math.round(c.verificationConfidence * 100) + '%' : 'n/a';
+    var verdictLabel = (c.verificationVerdict || 'pending').replace(/_/g, ' ');
+    var change = c.verificationChangeDetected ? 'Visual change detected' : (c.verificationVerdict ? 'No clear visual change' : 'AI has not scored this yet');
+    aiBlock = '<div class="ai-box">' +
+      '<strong>AI verification</strong> — ' + change +
+      (c.verificationVerdict ? ' · verdict: ' + verdictLabel : '') +
+      ' · confidence ' + pct +
+      (c.resolutionNote ? '<div style="margin-top:8px;">Officer note: ' + c.resolutionNote + '</div>' : '') +
+      '<div class="disc">This is an automated visual check of before/after photos. It can be wrong — it does not replace an on-site inspection or a formal legal finding.</div>' +
+    '</div>';
+  } else if (c.aiIssueType) {
+    var conf = c.aiConfidence != null ? Math.round(c.aiConfidence * 100) + '%' : 'n/a';
+    aiBlock = '<div class="ai-box">' +
+      '<strong>AI assessment at submission</strong> — classified as ' + c.aiIssueType + ' (confidence ' + conf + ').' +
+      '<div class="disc">Assistive only. The issue type you selected is what was routed. This is not a legal determination.</div>' +
+    '</div>';
+  }
+  summaryEl.innerHTML += photos + aiBlock;
 
   if (timeline.length === 0) {
     timelineEl.innerHTML = '<div class="empty-state">No status history yet.</div>';

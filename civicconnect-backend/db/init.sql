@@ -40,12 +40,19 @@ CREATE TABLE complaints (
     department      VARCHAR(100),
     authority_name  VARCHAR(100),
     status          VARCHAR(30) NOT NULL DEFAULT 'REPORTED',
-        -- REPORTED, ACKNOWLEDGED, ASSIGNED, IN_PROGRESS, RESOLVED, VERIFIED, CLOSED, REOPENED
+        -- REPORTED, ACKNOWLEDGED, ASSIGNED, IN_PROGRESS, AWAITING_VERIFICATION, RESOLVED, VERIFIED, CLOSED, REOPENED
     sla_deadline    TIMESTAMP,
     upvote_count    INTEGER NOT NULL DEFAULT 0,
     escalated       BOOLEAN NOT NULL DEFAULT false,
     created_at      TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMP NOT NULL DEFAULT now()
+    updated_at      TIMESTAMP NOT NULL DEFAULT now(),
+    resolution_note TEXT,
+    verification_verdict VARCHAR(80),
+    verification_confidence DOUBLE PRECISION,
+    verification_similarity DOUBLE PRECISION,
+    verification_change_detected BOOLEAN,
+    ai_issue_type   VARCHAR(80),
+    ai_confidence   DOUBLE PRECISION
 );
 
 CREATE INDEX idx_complaints_location ON complaints USING GIST (location);

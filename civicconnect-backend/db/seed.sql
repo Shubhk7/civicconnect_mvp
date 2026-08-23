@@ -29,37 +29,43 @@ INSERT INTO authority_mapping (ward_id, road_type, issue_type, department, autho
 (1, 'municipal', 'garbage',      'Sanitation', 'MCD', 48),
 (1, 'municipal', 'streetlight',  'Electrical', 'MCD', 96),
 (1, 'municipal', 'water_leak',   'Water',      'MCD', 48),
-(1, 'municipal', 'ewaste',       'Recycling',  'MCD', 120);
+(1, 'municipal', 'ewaste',       'Recycling',  'MCD', 120),
+(1, 'municipal', 'ev_charger',   'Electrical', 'MCD', 48);
 
 -- Ward 22 (IGI Airport corridor) - national highway under NHAI
 INSERT INTO authority_mapping (ward_id, road_type, issue_type, department, authority_name, sla_hours) VALUES
 (2, 'national_highway', 'pothole',     'Roads',      'NHAI', 48),
 (2, 'national_highway', 'streetlight', 'Electrical', 'NHAI', 72),
-(2, 'municipal',        'garbage',     'Sanitation', 'MCD',  48);
+(2, 'municipal',        'garbage',     'Sanitation', 'MCD',  48),
+(2, 'municipal',        'ev_charger',  'Electrical', 'MCD',  48);
 
 -- Ward 6 (Sector 29, Gurugram) - municipal roads under MCG
 INSERT INTO authority_mapping (ward_id, road_type, issue_type, department, authority_name, sla_hours) VALUES
 (3, 'municipal', 'pothole',      'Roads',      'MCG', 72),
 (3, 'municipal', 'garbage',      'Sanitation', 'MCG', 48),
 (3, 'municipal', 'streetlight',  'Electrical', 'MCG', 96),
-(3, 'municipal', 'water_leak',   'Water',      'MCG', 48);
+(3, 'municipal', 'water_leak',   'Water',      'MCG', 48),
+(3, 'municipal', 'ev_charger',   'Electrical', 'MCG', 48);
 
 -- Ward 51 (Dwarka Expressway) - state PWD road
 INSERT INTO authority_mapping (ward_id, road_type, issue_type, department, authority_name, sla_hours) VALUES
 (4, 'state_pwd', 'pothole',     'Roads',      'PWD', 96),
 (4, 'state_pwd', 'streetlight', 'Electrical', 'PWD', 96),
-(4, 'municipal', 'garbage',     'Sanitation', 'MCD', 48);
+(4, 'municipal', 'garbage',     'Sanitation', 'MCD', 48),
+(4, 'municipal', 'ev_charger',  'Electrical', 'MCD', 48);
 
 -- Ward 88 (Rohini) - municipal roads under MCD
 INSERT INTO authority_mapping (ward_id, road_type, issue_type, department, authority_name, sla_hours) VALUES
 (5, 'municipal', 'pothole',     'Roads',      'MCD', 72),
 (5, 'municipal', 'garbage',     'Sanitation', 'MCD', 48),
-(5, 'municipal', 'water_leak',  'Water',      'MCD', 48);
+(5, 'municipal', 'water_leak',  'Water',      'MCD', 48),
+(5, 'municipal', 'ev_charger',  'Electrical', 'MCD', 48);
 
 -- Ward 45 (Sector 14, Gurugram) - municipal roads under MCG
 INSERT INTO authority_mapping (ward_id, road_type, issue_type, department, authority_name, sla_hours) VALUES
 (6, 'municipal', 'pothole',     'Roads',      'MCG', 72),
-(6, 'municipal', 'garbage',     'Sanitation', 'MCG', 48);
+(6, 'municipal', 'garbage',     'Sanitation', 'MCG', 48),
+(6, 'municipal', 'ev_charger',  'Electrical', 'MCG', 48);
 
 -- A handful of realistic sample complaints so the dashboard/map isn't empty
 -- when you demo it live.

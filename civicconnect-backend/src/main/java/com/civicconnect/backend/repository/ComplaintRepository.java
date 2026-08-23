@@ -55,7 +55,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Integer> {
         "WHERE c.slaDeadline IS NOT NULL " +
         "AND c.slaDeadline < CURRENT_TIMESTAMP " +
         "AND c.escalated = false " +
-        "AND c.status IN ('REPORTED','ACKNOWLEDGED','ASSIGNED','IN_PROGRESS','UNASSIGNED','REOPENED')"
+        "AND c.status IN ('REPORTED','ACKNOWLEDGED','ASSIGNED','IN_PROGRESS','UNASSIGNED','REOPENED','AWAITING_VERIFICATION')"
     )
     List<Complaint> findNewlyBreachedComplaints();
 
@@ -64,7 +64,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Integer> {
     @Query(value =
         "SELECT * FROM complaints c " +
         "WHERE c.issue_type = :issueType " +
-        "AND c.status NOT IN ('RESOLVED','CLOSED') " +
+        "AND c.status NOT IN ('RESOLVED','VERIFIED','CLOSED') " +
         "AND ST_DWithin(c.location::geography, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography, :radiusMeters) " +
         "LIMIT 1",
         nativeQuery = true)

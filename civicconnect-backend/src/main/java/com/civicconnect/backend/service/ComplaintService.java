@@ -63,7 +63,12 @@ public class ComplaintService {
             && !aiResult.issueType.equals("unclassified") && !aiResult.issueType.equals("unknown")) {
             if (!aiResult.issueType.equalsIgnoreCase(effectiveIssueType)) {
                 aiNote = "AI classified this as '" + aiResult.issueType + "' (confidence "
-                    + aiResult.confidence + "), citizen selected '" + effectiveIssueType + "'.";
+                    + String.format("%.0f", aiResult.confidence * 100) + "%), citizen selected '"
+                    + effectiveIssueType + "'.";
+            } else {
+                aiNote = "AI assessment agrees with the selected issue type '"
+                    + effectiveIssueType + "' (confidence "
+                    + String.format("%.0f", aiResult.confidence * 100) + "%).";
             }
         }
 
@@ -105,6 +110,10 @@ public class ComplaintService {
         complaint.setIssueType(effectiveIssueType);
         complaint.setDescription(req.getDescription());
         complaint.setPhotoUrl(req.getPhotoUrl());
+        if (aiResult.available && aiResult.issueType != null) {
+            complaint.setAiIssueType(aiResult.issueType);
+            complaint.setAiConfidence(aiResult.confidence);
+        }
         complaint.setLocation(location);
 
         // Identity linking: only ever from the validated JWT, and only
@@ -141,6 +150,9 @@ public class ComplaintService {
         if (aiNote != null) {
             resp.message += " Note: " + aiNote;
         }
+        resp.aiAvailable = aiResult.available;
+        resp.aiIssueType = saved.getAiIssueType();
+        resp.aiConfidence = saved.getAiConfidence();
         return resp;
     }
 
@@ -177,15 +189,61 @@ public class ComplaintService {
         return true;
     }
 
-    public Complaint markResolved(Integer complaintId, String afterPhotoUrl) {
+    /**
+     * Officer submits a claimed fix: after-photo + note. The complaint
+     * moves to AWAITING_VERIFICATION (not silently closed). If both
+     * before/after photos exist, the AI service is asked whether a real
+     * visual change is present; that result is stored for the citizen-
+     * facing page. AI failure does not block the submission.
+     */
+    public Complaint submitForVerification(Integer complaintId, String afterPhotoUrl, String note) {
+        if (afterPhotoUrl == null || afterPhotoUrl.isBlank()) {
+            throw new IllegalArgumentException("An after photo is required to submit for verification.");
+        }
+        if (note == null || note.isBlank()) {
+            throw new IllegalArgumentException("A resolution note is required to submit for verification.");
+        }
+
         Complaint c = complaintRepository.findById(complaintId)
             .orElseThrow(() -> new IllegalArgumentException("Complaint not found: " + complaintId));
         c.setAfterPhotoUrl(afterPhotoUrl);
-        c.setStatus("RESOLVED");
+        c.setResolutionNote(note.trim());
+        c.setStatus("AWAITING_VERIFICATION");
         c.setUpdatedAt(LocalDateTime.now());
+
+        String historyNote = "Officer submitted for verification: " + note.trim();
+        if (c.getPhotoUrl() != null && !c.getPhotoUrl().isBlank()) {
+            AiClassificationService.VerificationResult vr =
+                aiClassificationService.verify(c.getPhotoUrl(), afterPhotoUrl);
+            if (vr.available) {
+                c.setVerificationVerdict(vr.verdict);
+                c.setVerificationSimilarity(vr.similarityScore);
+                c.setVerificationChangeDetected(vr.changeDetected);
+                c.setVerificationConfidence(confidenceFrom(vr));
+                historyNote += " AI verdict: " + vr.verdict
+                    + " (similarity " + vr.similarityScore + ").";
+            } else {
+                historyNote += " AI verification unavailable: " + vr.note;
+            }
+        }
+
         Complaint saved = complaintRepository.save(c);
-        recordHistory(saved, "RESOLVED", "Officer marked resolved, pending AI verification");
+        recordHistory(saved, "AWAITING_VERIFICATION", historyNote);
         return saved;
+    }
+
+    private static double confidenceFrom(AiClassificationService.VerificationResult vr) {
+        // Map SSIM-style similarity into a 0–1 "how sure is this verdict"
+        // score. likely_resolved sits in the mid band; identical photos
+        // (no_change) and unrelated photos (unreliable) are both low.
+        String verdict = vr.verdict == null ? "" : vr.verdict;
+        if (verdict.contains("likely_resolved") || verdict.contains("likely_resolved")) {
+            return Math.max(0.55, Math.min(0.95, 1.0 - Math.abs(vr.similarityScore - 0.55)));
+        }
+        if (verdict.contains("no_change") || verdict.contains("no_change")) {
+            return Math.max(0.6, Math.min(0.98, vr.similarityScore));
+        }
+        return 0.35;
     }
 
     public Complaint updateStatus(Integer complaintId, String newStatus, String note) {
@@ -199,7 +257,8 @@ public class ComplaintService {
     }
 
     private static final List<String> OPEN_STATUSES =
-        List.of("REPORTED", "ACKNOWLEDGED", "ASSIGNED", "IN_PROGRESS", "UNASSIGNED", "REOPENED");
+        List.of("REPORTED", "ACKNOWLEDGED", "ASSIGNED", "IN_PROGRESS", "UNASSIGNED", "REOPENED",
+            "AWAITING_VERIFICATION");
     private static final List<String> CLOSED_STATUSES =
         List.of("RESOLVED", "VERIFIED", "CLOSED");
     private static final long NEAR_SLA_WINDOW_HOURS = 24;

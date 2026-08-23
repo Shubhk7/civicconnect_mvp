@@ -38,9 +38,20 @@ public class ComplaintResponse {
     // filed it.
     public Double lat;
     public Double lng;
+    public String photoUrl;
+    public String afterPhotoUrl;
+    public String resolutionNote;
+    public String verificationVerdict;
+    public Double verificationConfidence;
+    public Double verificationSimilarity;
+    public Boolean verificationChangeDetected;
+    public String aiIssueType;
+    public Double aiConfidence;
+    public boolean aiAvailable;
 
     private static final java.util.Set<String> OPEN_STATUSES = java.util.Set.of(
-        "REPORTED", "ACKNOWLEDGED", "ASSIGNED", "IN_PROGRESS", "UNASSIGNED", "REOPENED"
+        "REPORTED", "ACKNOWLEDGED", "ASSIGNED", "IN_PROGRESS", "UNASSIGNED", "REOPENED",
+        "AWAITING_VERIFICATION"
     );
 
     public static ComplaintResponse from(Complaint c) {
@@ -66,6 +77,16 @@ public class ComplaintResponse {
             r.lat = c.getLocation().getY();
             r.lng = c.getLocation().getX();
         }
+        r.photoUrl = c.getPhotoUrl();
+        r.afterPhotoUrl = c.getAfterPhotoUrl();
+        r.resolutionNote = c.getResolutionNote();
+        r.verificationVerdict = c.getVerificationVerdict();
+        r.verificationConfidence = c.getVerificationConfidence();
+        r.verificationSimilarity = c.getVerificationSimilarity();
+        r.verificationChangeDetected = c.getVerificationChangeDetected();
+        r.aiIssueType = c.getAiIssueType();
+        r.aiConfidence = c.getAiConfidence();
+        r.aiAvailable = c.getAiIssueType() != null;
         return r;
     }
 }

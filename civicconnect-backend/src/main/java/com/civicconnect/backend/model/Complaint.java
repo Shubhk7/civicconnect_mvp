@@ -63,6 +63,27 @@ public class Complaint {
     @Column(name = "reported_by_user_id")
     private Integer reportedByUserId;
 
+    @Column(name = "resolution_note")
+    private String resolutionNote;
+
+    @Column(name = "verification_verdict")
+    private String verificationVerdict;
+
+    @Column(name = "verification_confidence")
+    private Double verificationConfidence;
+
+    @Column(name = "verification_similarity")
+    private Double verificationSimilarity;
+
+    @Column(name = "verification_change_detected")
+    private Boolean verificationChangeDetected;
+
+    @Column(name = "ai_issue_type")
+    private String aiIssueType;
+
+    @Column(name = "ai_confidence")
+    private Double aiConfidence;
+
     // --- getters / setters ---
     public Integer getId() { return id; }
 
@@ -111,4 +132,25 @@ public class Complaint {
 
     public Integer getReportedByUserId() { return reportedByUserId; }
     public void setReportedByUserId(Integer reportedByUserId) { this.reportedByUserId = reportedByUserId; }
+
+    public String getResolutionNote() { return resolutionNote; }
+    public void setResolutionNote(String resolutionNote) { this.resolutionNote = resolutionNote; }
+
+    public String getVerificationVerdict() { return verificationVerdict; }
+    public void setVerificationVerdict(String verificationVerdict) { this.verificationVerdict = verificationVerdict; }
+
+    public Double getVerificationConfidence() { return verificationConfidence; }
+    public void setVerificationConfidence(Double verificationConfidence) { this.verificationConfidence = verificationConfidence; }
+
+    public Double getVerificationSimilarity() { return verificationSimilarity; }
+    public void setVerificationSimilarity(Double verificationSimilarity) { this.verificationSimilarity = verificationSimilarity; }
+
+    public Boolean getVerificationChangeDetected() { return verificationChangeDetected; }
+    public void setVerificationChangeDetected(Boolean verificationChangeDetected) { this.verificationChangeDetected = verificationChangeDetected; }
+
+    public String getAiIssueType() { return aiIssueType; }
+    public void setAiIssueType(String aiIssueType) { this.aiIssueType = aiIssueType; }
+
+    public Double getAiConfidence() { return aiConfidence; }
+    public void setAiConfidence(Double aiConfidence) { this.aiConfidence = aiConfidence; }
 }

@@ -313,6 +313,11 @@
     display:inline-block;margin-top:6px;font-family:var(--mono);font-size:10.5px;
     text-transform:uppercase;padding:3px 8px;border-radius:100px;
   }
+  .filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+  .filter-bar select{
+    flex:1;min-width:160px;font-family:var(--body);font-size:13.5px;padding:9px 12px;
+    border:1.5px solid var(--line);border-radius:9px;background:var(--paper-raised);color:var(--ink);
+  }
 </style>
 </head>
 <body>
@@ -340,7 +345,24 @@
     <div class="section-head">
       <div class="kicker">Live map</div>
       <h2>Where things are being reported</h2>
-      <p class="section-sub">Every pin is a real report. Colored by status — never by who filed it.</p>
+      <p class="section-sub">Every pin is a real report. Colored by status — never by who filed it. Filter by issue, authority, status, or SLA.</p>
+    </div>
+
+    <div class="filter-bar" id="map-filters">
+      <select id="f-issue" aria-label="Issue type"><option value="">All issue types</option></select>
+      <select id="f-authority" aria-label="Authority"><option value="">All authorities</option></select>
+      <select id="f-status" aria-label="Status">
+        <option value="">All statuses</option>
+        <option value="open">Open</option>
+        <option value="AWAITING_VERIFICATION">Awaiting verification</option>
+        <option value="RESOLVED">Resolved / verified / closed</option>
+      </select>
+      <select id="f-sla" aria-label="SLA">
+        <option value="">All SLA states</option>
+        <option value="ok">On track</option>
+        <option value="warn">Approaching</option>
+        <option value="breached">Breached</option>
+      </select>
     </div>
 
     <div class="map-shell"><div id="map"></div></div>
@@ -494,52 +516,97 @@
 
   function prettyIssue(t) {
     return { pothole:'Pothole', garbage:'Garbage pileup', streetlight:'Streetlight out',
-             water_leak:'Water leakage', ewaste:'E-waste pickup' }[t] || t;
+             water_leak:'Water leakage', ewaste:'E-waste pickup', ev_charger:'EV charger' }[t] || t;
   }
 
   function colorFor(c) {
     if (c.slaBreached) return '#B8422F';
     if (['RESOLVED','VERIFIED','CLOSED'].indexOf(c.status) !== -1) return '#0F7A63';
+    if (c.status === 'AWAITING_VERIFICATION') return '#24326B';
     if (['ASSIGNED','ACKNOWLEDGED','IN_PROGRESS'].indexOf(c.status) !== -1) return '#C9822E';
     return '#565F73';
   }
 
+  function mockImpact(c) {
+    var n = c.affectedCount || 1;
+    var sla = c.slaBreached ? 22 : 0;
+    var open = ['RESOLVED','VERIFIED','CLOSED'].indexOf(c.status) === -1 ? 12 : 0;
+    return Math.min(100, Math.round(18 + Math.min(n, 8) * 8 + sla + open));
+  }
+
+  function slaBucket(c) {
+    if (['RESOLVED','VERIFIED','CLOSED'].indexOf(c.status) !== -1) return 'ok';
+    if (c.slaBreached) return 'breached';
+    if (!c.slaDeadline) return 'ok';
+    var hrs = (new Date(c.slaDeadline).getTime() - Date.now()) / 3600000;
+    if (hrs < 6) return 'warn';
+    return 'ok';
+  }
+
+  let map, markerLayer, allPins = [];
+
+  function matchesFilters(c) {
+    var issue = document.getElementById('f-issue').value;
+    var auth = document.getElementById('f-authority').value;
+    var status = document.getElementById('f-status').value;
+    var sla = document.getElementById('f-sla').value;
+    if (issue && c.issueType !== issue) return false;
+    if (auth && (c.authorityName || '') !== auth) return false;
+    if (status === 'open' && ['RESOLVED','VERIFIED','CLOSED'].indexOf(c.status) !== -1) return false;
+    if (status === 'RESOLVED' && ['RESOLVED','VERIFIED','CLOSED'].indexOf(c.status) === -1) return false;
+    if (status === 'AWAITING_VERIFICATION' && c.status !== 'AWAITING_VERIFICATION') return false;
+    if (sla && slaBucket(c) !== sla) return false;
+    return true;
+  }
+
+  function renderMarkers() {
+    if (markerLayer) markerLayer.clearLayers();
+    else markerLayer = L.layerGroup().addTo(map);
+    const bounds = [];
+    allPins.filter(matchesFilters).forEach(function (c) {
+      if (typeof c.lat !== 'number' || typeof c.lng !== 'number') return;
+      bounds.push([c.lat, c.lng]);
+      const marker = L.circleMarker([c.lat, c.lng], {
+        radius: 8, color: colorFor(c), fillColor: colorFor(c), fillOpacity: 0.75, weight: 2
+      });
+      marker.bindPopup(
+        '<div class="popup-issue">' + prettyIssue(c.issueType) + '</div>' +
+        '<div class="popup-meta">' + (c.wardName || 'Unassigned') + ' &middot; ' + (c.authorityName || '—') +
+          ' &middot; ' + (c.affectedCount || 1) + ' affected' +
+          ' &middot; impact ' + mockImpact(c) + ' (demo)</div>' +
+        '<span class="popup-badge" style="background:' + colorFor(c) + '22;color:' + colorFor(c) + '">' +
+        CivicApp.statusLabel(c.status) + (c.slaBreached ? ' &middot; SLA BREACHED' : '') + '</span>'
+      );
+      markerLayer.addLayer(marker);
+    });
+    if (bounds.length > 0) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+  }
+
   async function loadMap() {
-    // Default view: Delhi NCR, since that's where the seeded demo wards
-    // are. Recentered below once real data loads, if any exists.
-    const map = L.map('map').setView([28.6139, 77.2090], 11);
+    map = L.map('map').setView([28.6139, 77.2090], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 19
     }).addTo(map);
 
     const { ok, data } = await CivicApp.apiFetch('/api/complaints/public');
-    if (!ok || !Array.isArray(data) || data.length === 0) return;
+    if (!ok || !Array.isArray(data)) return;
+    allPins = data;
 
-    const bounds = [];
-    data.forEach(function (c) {
-      if (typeof c.lat !== 'number' || typeof c.lng !== 'number') return;
-      bounds.push([c.lat, c.lng]);
-      const marker = L.circleMarker([c.lat, c.lng], {
-        radius: 8,
-        color: colorFor(c),
-        fillColor: colorFor(c),
-        fillOpacity: 0.75,
-        weight: 2
-      }).addTo(map);
-
-      marker.bindPopup(
-        '<div class="popup-issue">' + prettyIssue(c.issueType) + '</div>' +
-        '<div class="popup-meta">' + (c.wardName || 'Unassigned') + ' &middot; ' + (c.authorityName || '—') +
-          ' &middot; ' + (c.affectedCount || 1) + ' affected' + '</div>' +
-        '<span class="popup-badge" style="background:' + colorFor(c) + '22;color:' + colorFor(c) + '">' +
-        CivicApp.statusLabel(c.status) + (c.slaBreached ? ' &middot; SLA BREACHED' : '') + '</span>'
-      );
+    const issues = Array.from(new Set(data.map(function (c) { return c.issueType; }).filter(Boolean))).sort();
+    const auths = Array.from(new Set(data.map(function (c) { return c.authorityName; }).filter(Boolean))).sort();
+    const issueSel = document.getElementById('f-issue');
+    issues.forEach(function (t) {
+      const o = document.createElement('option'); o.value = t; o.textContent = prettyIssue(t); issueSel.appendChild(o);
     });
-
-    if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
-    }
+    const authSel = document.getElementById('f-authority');
+    auths.forEach(function (t) {
+      const o = document.createElement('option'); o.value = t; o.textContent = t; authSel.appendChild(o);
+    });
+    ['f-issue','f-authority','f-status','f-sla'].forEach(function (id) {
+      document.getElementById(id).addEventListener('change', renderMarkers);
+    });
+    renderMarkers();
   }
 
   loadMap();

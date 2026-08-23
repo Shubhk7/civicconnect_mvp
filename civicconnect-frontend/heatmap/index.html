@@ -530,7 +530,8 @@
 
       marker.bindPopup(
         '<div class="popup-issue">' + prettyIssue(c.issueType) + '</div>' +
-        '<div class="popup-meta">' + (c.wardName || 'Unassigned') + ' &middot; ' + (c.authorityName || '—') + '</div>' +
+        '<div class="popup-meta">' + (c.wardName || 'Unassigned') + ' &middot; ' + (c.authorityName || '—') +
+          ' &middot; ' + (c.affectedCount || 1) + ' affected' + '</div>' +
         '<span class="popup-badge" style="background:' + colorFor(c) + '22;color:' + colorFor(c) + '">' +
         CivicApp.statusLabel(c.status) + (c.slaBreached ? ' &middot; SLA BREACHED' : '') + '</span>'
       );

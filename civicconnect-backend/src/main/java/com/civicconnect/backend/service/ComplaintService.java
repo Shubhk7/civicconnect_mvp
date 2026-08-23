@@ -89,7 +89,9 @@ public class ComplaintService {
             Complaint refreshed = complaintRepository.findById(existing.getId()).orElse(existing);
             ComplaintResponse resp = ComplaintResponse.from(refreshed);
             resp.isDuplicate = true;
-            resp.message = "A similar open report already exists nearby. Added your upvote instead of creating a duplicate.";
+            resp.message = resp.affectedCount + " citizen" + (resp.affectedCount == 1 ? "" : "s")
+                + " (including you) " + (resp.affectedCount == 1 ? "has" : "have")
+                + " now reported this location. Added your report to the existing one instead of creating a duplicate.";
             return resp;
         }
 

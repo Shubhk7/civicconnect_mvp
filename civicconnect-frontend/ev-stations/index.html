@@ -13,9 +13,10 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Report an Issue — CivicConnect</title>
+<title>EV Stations — CivicConnect</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <style>
   :root{
     --ink:#101828;
@@ -239,8 +240,77 @@
 
   .full-btn{width:100%;justify-content:center;}
 
+  /* ---- Homepage-only additions: stat bar + how-it-works ---- */
+  .statbar{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    margin-top:44px;
+  }
+  @media (max-width:760px){.statbar{grid-template-columns:repeat(2,1fr);}}
+  .statbar-cell{background:var(--paper-raised);padding:22px 22px;}
+  .statbar-cell .num{font-family:var(--disp);font-weight:700;font-size:28px;letter-spacing:-.01em;}
+  .statbar-cell .lab{font-size:12.5px;color:var(--ink-soft);margin-top:4px;}
+
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+  @media (max-width:900px){.steps{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:520px){.steps{grid-template-columns:1fr;}}
+  .step-card{position:relative;padding-top:6px;}
+  .step-num{
+    font-family:var(--disp);font-weight:700;font-size:34px;color:var(--indigo-tint);
+    -webkit-text-stroke:1.5px var(--indigo);line-height:1;margin-bottom:14px;
+  }
+  .step-card h3{font-family:var(--disp);font-size:16px;margin-bottom:7px;}
+  .step-card p{font-size:13.5px;color:var(--ink-soft);}
+  .step-arrow{display:none;}
+  @media (min-width:900px){
+    .step-card:not(:last-child)::after{
+      content:"";position:absolute;top:16px;right:-20px;width:16px;height:1.5px;
+      background:var(--line);
+    }
+  }
+
+  .cta-band{
+    background:var(--indigo-deep);border-radius:20px;padding:48px 40px;
+    display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;color:#fff;
+  }
+  .cta-band h2{color:#fff;}
+  .cta-band p{color:#B7BEDD;margin-top:8px;font-size:14.5px;max-width:420px;}
+  .cta-band .btn-solid{background:#fff;color:var(--indigo-deep);}
+  .cta-band .btn-solid:hover{background:#EDEFF7;}
+  .cta-band .btn-ghost{border-color:rgba(255,255,255,.4);color:#fff;}
+  .cta-band .btn-ghost:hover{background:rgba(255,255,255,.12);}
+
+  footer.rich{border-top:1px solid var(--line);padding:52px 0 32px;margin-top:20px;}
+  .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:36px;margin-bottom:36px;}
+  @media (max-width:760px){.footer-grid{grid-template-columns:1fr 1fr;}}
+  .footer-col h4{font-family:var(--disp);font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);margin-bottom:14px;}
+  .footer-col a{display:block;font-size:13.5px;color:var(--ink);margin-bottom:9px;}
+  .footer-col a:hover{color:var(--indigo);}
+  .footer-brand{font-family:var(--disp);font-weight:700;font-size:18px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .footer-brand-desc{font-size:13.5px;color:var(--ink-soft);max-width:280px;line-height:1.6;}
+  .footer-bottom{border-top:1px solid var(--line);padding-top:22px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--ink-soft);}
+
   @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
 
+
+
+  /* ---- Heatmap page additions ---- */
+  .map-shell{
+    border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    height:560px;background:var(--paper-raised);
+  }
+  #map{ width:100%; height:100%; }
+  .map-legend{
+    display:flex;gap:18px;flex-wrap:wrap;margin-top:16px;font-size:12.5px;color:var(--ink-soft);
+  }
+  .map-legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;}
+  .leaflet-popup-content{font-family:var(--body);font-size:13.5px;}
+  .popup-issue{font-family:var(--disp);font-weight:600;font-size:14.5px;margin-bottom:4px;}
+  .popup-meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);}
+  .popup-badge{
+    display:inline-block;margin-top:6px;font-family:var(--mono);font-size:10.5px;
+    text-transform:uppercase;padding:3px 8px;border-radius:100px;
+  }
 </style>
 </head>
 <body>
@@ -254,6 +324,7 @@
     <nav class="navlinks">
       <a href="/">Home</a>
       <a href="/report/">Report an issue</a>
+      <a href="/heatmap/">Live map</a>
       <a href="/my-reports/">My reports</a>
       <a href="/ev-stations/">EV stations</a>
     </nav>
@@ -262,86 +333,39 @@
   </div>
 </header>
 
-<main class="wrap" style="padding:44px 0 60px;">
+<main>
+  <div class="wrap" style="padding-top:44px;">
+    <div class="section-head">
+      <div class="kicker">EV stations</div>
+      <h2>EV charging near you</h2>
+      <p class="section-sub">Public charging points around Chhawla &amp; nearby Delhi&ndash;Gurugram areas. Tap a pin for details, or the address to open directions.</p>
+    </div>
 
-<div style="max-width:560px;margin:0 auto;">
-  <div class="kicker">Report an issue</div>
-  <h2>What&rsquo;s the problem?</h2>
-  <p class="section-sub" style="margin-bottom:26px;">No account needed. If you&rsquo;re logged in,
-  this report links to your account by default &mdash; untick the box below to stay anonymous.</p>
+    <div class="map-shell"><div id="map"></div></div>
 
-  <div class="panel">
-    <div class="form-error" id="report-error"></div>
-    <div class="form-success" id="report-success"></div>
+    <div class="map-legend">
+      <span><span class="dot" style="background:#0F7A63"></span>DC fast charger</span>
+      <span><span class="dot" style="background:#24326B"></span>AC charger</span>
+      <span><span class="dot" style="background:#C9822E"></span>Battery swap</span>
+    </div>
 
-    <form id="report-form">
-      <div class="field">
-        <label for="issueType">Issue type</label>
-        <select id="issueType" required>
-          <option value="">Select an issue type</option>
-          <option value="pothole">Pothole</option>
-          <option value="garbage">Garbage</option>
-          <option value="streetlight">Streetlight</option>
-          <option value="water_leak">Water leak</option>
-          <option value="ewaste">E-waste</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="description">Description</label>
-        <textarea id="description" placeholder="Briefly describe what you're seeing and where."></textarea>
-      </div>
-
-      <div class="field">
-        <label for="photo">Photo (optional)</label>
-        <input type="file" id="photo" accept="image/*">
-        <div class="hint" id="photo-hint">
-          Any faces or license plates in the photo are automatically blurred before it's stored — nobody, including officers, sees the original.
-        </div>
-        <div id="photo-preview" style="display:none;margin-top:10px;">
-          <img id="photo-preview-img" style="max-width:220px;border-radius:10px;border:1px solid var(--line);display:block;">
-          <div class="hint" id="photo-upload-status"></div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Location</label>
-        <button type="button" class="btn btn-ghost btn-sm" id="locate-btn">Use my location</button>
-        <div class="hint" id="location-status">No location captured yet.</div>
-      </div>
-
-      <div class="field" id="anon-field" style="display:none;">
-        <label style="display:flex;align-items:center;gap:8px;font-weight:500;">
-          <input type="checkbox" id="anonymous-toggle" style="width:auto;">
-          Report anonymously (don&rsquo;t link this to my account)
-        </label>
-      </div>
-
-      <button type="submit" class="btn btn-solid full-btn" id="submit-btn">Submit report</button>
-
-      <div class="privacy-note">
-        Your exact identity is never shown on the public ledger &mdash; only the issue, ward,
-        authority, and status are visible to others.
-      </div>
-    </form>
+    <p class="section-sub" style="margin-top:18px;font-size:12.5px;">
+      Approximate demo locations for testing &mdash; not live pricing or slot availability.
+      A real deployment would sync this from a charging-network API (e.g. Statiq, Tata Power, ChargeZone) rather than a static seed list.
+    </p>
   </div>
-
-  <div class="panel" id="result-panel" style="display:none;">
-    <div class="panel-head"><h3>Report submitted</h3></div>
-    <div id="result-body"></div>
-  </div>
-</div>
-
 </main>
 
-<footer style="border-top:1px solid var(--line);padding:28px 0;margin-top:40px;">
-  <div class="wrap" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--ink-soft);">
-    <span>CivicConnect &mdash; report it once, we find who&rsquo;s responsible.</span>
-    <span>Public accountability, not just complaint submission.</span>
+<footer class="rich">
+  <div class="wrap">
+    <div class="footer-bottom">
+      <span>CivicConnect &mdash; a civic accountability platform, built for FOCP-II.</span>
+      <span>Reporter identity is never shown publicly, on any page.</span>
+    </div>
   </div>
 </footer>
 
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 
 // ============================================================
@@ -355,11 +379,6 @@
   const TOKEN_KEY = 'civic_token';
   const USER_KEY = 'civic_user';
 
-  // ---- session storage helpers ----
-  // Using localStorage only to hold the JWT + cached profile — NOT as a
-  // substitute for real auth. Every protected call still round-trips to
-  // the backend, which validates the JWT itself; nothing here is trusted
-  // on its own.
   function getToken() { return localStorage.getItem(TOKEN_KEY); }
   function getUser() {
     try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch (e) { return null; }
@@ -374,9 +393,6 @@
   }
   function isLoggedIn() { return !!getToken(); }
 
-  // ---- central fetch helper ----
-  // Automatically attaches the JWT if we have one. On a 401 from a
-  // protected endpoint, clears the stale session and bounces to /login/.
   async function apiFetch(path, options = {}) {
     const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
     const token = getToken();
@@ -386,9 +402,6 @@
 
     if (res.status === 401) {
       clearSession();
-      // Only force a redirect for pages that actually require login —
-      // callers on public pages (e.g. the report form for a logged-out
-      // visitor) should check res.ok themselves instead of relying on this.
       if (window.CIVIC_REQUIRE_AUTH) {
         window.location.href = '/login/';
       }
@@ -399,10 +412,6 @@
     return { ok: res.ok, status: res.status, data };
   }
 
-  // ---- shared nav rendering ----
-  // Call this once per page inside an element with id="civic-nav-actions".
-  // Swaps between "Log in / Create account" and "Dashboard / Log out"
-  // depending on session state.
   function renderNavActions(el) {
     if (!el) return;
     if (isLoggedIn()) {
@@ -424,7 +433,6 @@
     }
   }
 
-  // ---- small utilities pages reuse ----
   function statusLabel(status) {
     return (status || '').replace(/_/g, ' ');
   }
@@ -442,7 +450,6 @@
     return { breached: false, text: hrs + 'h remaining' };
   }
 
-  // Expose everything under one global so page scripts can use it.
   // ---- dark/light theme toggle ----
   var THEME_KEY = 'civic_theme';
   function getTheme() {
@@ -474,148 +481,79 @@
 
 </script>
 <script>
-
-document.addEventListener('DOMContentLoaded', function () {
   CivicApp.renderNavActions(document.getElementById('civic-nav-actions'));
   CivicApp.initThemeToggle(document.getElementById('civic-theme-toggle'));
 
-  if (CivicApp.isLoggedIn()) {
-    document.getElementById('anon-field').style.display = 'block';
+  // Static demo seed of public EV charging points around Chhawla / Dwarka /
+  // Najafgarh / Bijwasan / Dwarka Expressway / nearby Gurugram sectors.
+  // Coordinates are approximate placements near known real localities and
+  // real charging-network station names found via web search — not
+  // surveyed-accurate, and not live availability data. Same honest-seed
+  // approach used for the ward boundaries: good enough to test against,
+  // clearly not a production data source.
+  const EV_STATIONS = [
+    { name: 'Tata Power — Vegas Mall, Dwarka', operator: 'Tata Power / Statiq', type: 'DC', lat: 28.5807, lng: 77.0552, address: 'Vegas Mall, Sector 14, Dwarka, Delhi' },
+    { name: 'EESL Charging Point, Bamnoli Village', operator: 'EESL', type: 'AC', lat: 28.5691, lng: 77.0396, address: 'Road No. 116, Bamnoli Village, Sector 28, Dwarka' },
+    { name: 'Tata Power — Emerald Bay, Dwarka Expressway', operator: 'Tata Power / Statiq', type: 'DC', lat: 28.5265, lng: 77.0503, address: 'Emerald Bay, Sector 104, Dwarka Expressway, Gurugram' },
+    { name: 'Statiq Point, Sector 29 Market', operator: 'Statiq', type: 'AC', lat: 28.4622, lng: 77.0965, address: 'Leisure Valley Park, City Centre, Sector 29, Gurugram' },
+    { name: 'IOCL Fuel + EV Point, Najafgarh Road', operator: 'IOCL', type: 'DC', lat: 28.6098, lng: 76.9887, address: 'Najafgarh Road Industrial Area, New Delhi' },
+    { name: 'Croma Store Charger, Rajouri Garden', operator: 'Tata Power', type: 'AC', lat: 28.6459, lng: 77.1195, address: 'Rama Rd, Najafgarh Road Industrial Area, New Delhi' },
+    { name: 'Charging Point, Kapashera Border', operator: 'Statiq', type: 'AC', lat: 28.5486, lng: 77.0834, address: 'NH-48 service road, Kapashera, Delhi–Gurugram border' },
+    { name: 'Charging Point, Bijwasan Rly Station Rd', operator: 'ChargeZone', type: 'DC', lat: 28.5677, lng: 77.0217, address: 'Bijwasan Road, near Bijwasan Railway Station, Delhi' },
+    { name: 'Battery Swap Point, Chhawla Village', operator: 'Sun Mobility', type: 'SWAP', lat: 28.5614, lng: 77.0020, address: 'Main Chhawla Road, Chhawla, Delhi' },
+    { name: 'Charging Point, Dindarpur', operator: 'Statiq', type: 'AC', lat: 28.5545, lng: 76.9938, address: 'Dindarpur village road, near Chhawla, Delhi' },
+    { name: 'Charging Point, Jhuljhuli', operator: 'Tata Power', type: 'AC', lat: 28.5432, lng: 76.9871, address: 'Jhuljhuli village, off Najafgarh–Chhawla road' },
+    { name: 'IGI Airport Cargo Rd EV Point', operator: 'IOCL', type: 'DC', lat: 28.5556, lng: 77.1000, address: 'Cargo Road, near IGI Airport, New Delhi' }
+  ];
+
+  function colorForType(t) {
+    if (t === 'DC') return '#0F7A63';
+    if (t === 'SWAP') return '#C9822E';
+    return '#24326B';
+  }
+  function labelForType(t) {
+    if (t === 'DC') return 'DC fast charger';
+    if (t === 'SWAP') return 'Battery swap';
+    return 'AC charger';
   }
 
-  let lat = null, lng = null;
-  const locateBtn = document.getElementById('locate-btn');
-  const locationStatus = document.getElementById('location-status');
+  function loadMap() {
+    const map = L.map('map').setView([28.5614, 77.0020], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map);
 
-  locateBtn.addEventListener('click', function () {
-    if (!navigator.geolocation) {
-      locationStatus.textContent = 'Geolocation is not supported by this browser.';
-      return;
-    }
-    locationStatus.textContent = 'Getting your location…';
-    navigator.geolocation.getCurrentPosition(function (pos) {
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-      locationStatus.textContent = 'Location captured (' + lat.toFixed(4) + ', ' + lng.toFixed(4) + ')';
-    }, function () {
-      locationStatus.textContent = 'Could not get your location. Please allow location access and try again.';
-    });
-  });
+    const bounds = [];
+    EV_STATIONS.forEach(function (s) {
+      bounds.push([s.lat, s.lng]);
+      const color = colorForType(s.type);
+      const marker = L.circleMarker([s.lat, s.lng], {
+        radius: 8,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.75,
+        weight: 2
+      }).addTo(map);
 
-  const form = document.getElementById('report-form');
-  const errorEl = document.getElementById('report-error');
-  const successEl = document.getElementById('report-success');
-  const submitBtn = document.getElementById('submit-btn');
-
-  // Photo upload: happens as soon as a file is selected, not on final
-  // submit, so the citizen can see the blur result and confirm/retry
-  // before completing the report. photoUrl is stored here and included
-  // in the final POST /api/complaints body once submit runs.
-  let photoUrl = null;
-  const photoInput = document.getElementById('photo');
-  const photoPreview = document.getElementById('photo-preview');
-  const photoPreviewImg = document.getElementById('photo-preview-img');
-  const photoUploadStatus = document.getElementById('photo-upload-status');
-
-  photoInput.addEventListener('change', async function () {
-    const file = photoInput.files[0];
-    if (!file) return;
-    photoUrl = null;
-    photoPreview.style.display = 'block';
-    photoPreviewImg.src = URL.createObjectURL(file);
-    photoUploadStatus.textContent = 'Uploading and checking for faces/plates to blur…';
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const token = CivicApp.getToken();
-      const headers = {};
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-      const res = await fetch(CivicApp.API_BASE + '/api/uploads/photo', {
-        method: 'POST',
-        headers: headers,
-        body: formData
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        photoUploadStatus.textContent = data.error || 'Could not process this photo. Try a different one.';
-        photoInput.value = '';
-        return;
-      }
-      photoUrl = data.photoUrl;
-      photoPreviewImg.src = photoUrl;
-      const parts = [];
-      if (data.facesBlurred > 0) parts.push(data.facesBlurred + ' face' + (data.facesBlurred === 1 ? '' : 's'));
-      if (data.platesBlurred > 0) parts.push(data.platesBlurred + ' plate' + (data.platesBlurred === 1 ? '' : 's'));
-      photoUploadStatus.textContent = parts.length
-        ? 'Blurred ' + parts.join(' and ') + ' before storing. Attached.'
-        : 'No faces or plates detected. Attached.';
-    } catch (err) {
-      photoUploadStatus.textContent = 'Upload failed — you can still submit without a photo.';
-      photoInput.value = '';
-    }
-  });
-
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    errorEl.className = 'form-error';
-    successEl.className = 'form-success';
-
-    const issueType = document.getElementById('issueType').value;
-    const description = document.getElementById('description').value;
-    const anonymous = document.getElementById('anonymous-toggle').checked;
-
-    if (!issueType) {
-      errorEl.textContent = 'Please select an issue type.';
-      errorEl.className = 'form-error show';
-      return;
-    }
-    if (lat === null || lng === null) {
-      errorEl.textContent = 'Please capture your location before submitting.';
-      errorEl.className = 'form-error show';
-      return;
-    }
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting…';
-
-    const { ok, data } = await CivicApp.apiFetch('/api/complaints', {
-      method: 'POST',
-      body: JSON.stringify({ issueType, description, lat, lng, anonymous, photoUrl })
+      const mapsUrl = 'https://www.google.com/maps?q=' + s.lat + ',' + s.lng;
+      marker.bindPopup(
+        '<div class="popup-issue">' + s.name + '</div>' +
+        '<div class="popup-meta">' + s.operator + '</div>' +
+        '<div class="popup-meta" style="margin-top:4px;">' +
+          '<a href="' + mapsUrl + '" target="_blank" rel="noopener" style="color:var(--indigo);text-decoration:underline;">' + s.address + '</a>' +
+        '</div>' +
+        '<span class="popup-badge" style="background:' + color + '22;color:' + color + '">' + labelForType(s.type) + '</span>'
+      );
     });
 
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Submit report';
-
-    if (!ok) {
-      errorEl.textContent = (data && data.error) || 'Something went wrong submitting your report. Please try again.';
-      errorEl.className = 'form-error show';
-      return;
+    if (bounds.length > 0) {
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
     }
+  }
 
-    form.style.display = 'none';
-    const resultPanel = document.getElementById('result-panel');
-    const resultBody = document.getElementById('result-body');
-    resultPanel.style.display = 'block';
-
-    if (data.isDuplicate) {
-      resultBody.innerHTML = '<p>' + (data.message || 'A similar report already exists nearby — yours has been added to it.') + '</p>';
-      return;
-    }
-
-    resultBody.innerHTML =
-      '<div class="stat-row" style="grid-template-columns:1fr 1fr;">' +
-        '<div class="stat-card"><div class="num">' + (data.authorityName || 'Pending') + '</div><div class="lab">Authority</div></div>' +
-        '<div class="stat-card"><div class="num">' + (data.department || 'Pending') + '</div><div class="lab">Department</div></div>' +
-      '</div>' +
-      '<p><strong>Ward:</strong> ' + (data.wardName || 'Under review') + '</p>' +
-      '<p><strong>Status:</strong> <span class="status-pill status-' + data.status + '">' + CivicApp.statusLabel(data.status) + '</span></p>' +
-      '<p><strong>SLA deadline:</strong> ' + CivicApp.fmtDate(data.slaDeadline) + '</p>' +
-      '<p style="margin-top:14px;"><a class="btn btn-ghost btn-sm" href="/report-details/?id=' + data.id + '">Track this report</a></p>';
-  });
-});
-
+  loadMap();
 </script>
+
 </body>
 </html>

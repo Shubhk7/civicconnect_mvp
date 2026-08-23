@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem('civic_theme');
+    if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.setAttribute('data-theme','dark');
+    }
+  } catch(e){}
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Register — CivicConnect</title>
@@ -26,7 +36,28 @@
     --body:'Inter',sans-serif;
     --mono:'IBM Plex Mono',monospace;
     --radius:14px;
+    --header-bg:rgba(246,247,245,.92);
   }
+  [data-theme="dark"]{
+    --ink:#EDEFF2;
+    --ink-soft:#9AA3B5;
+    --paper:#12141C;
+    --paper-raised:#1A1E29;
+    --indigo:#8B97E0;
+    --indigo-deep:#B9C1EF;
+    --indigo-tint:#22273D;
+    --amber:#E3A85C;
+    --amber-tint:#332711;
+    --teal:#3FC4A2;
+    --teal-tint:#0F2E27;
+    --red:#E38672;
+    --red-tint:#3A1D17;
+    --line:#2A2E3B;
+    --header-bg:rgba(18,20,28,.85);
+  }
+  html{color-scheme:light dark;}
+  [data-theme="dark"] html,[data-theme="dark"]{color-scheme:dark;}
+  body{transition:background-color .15s ease,color .15s ease;}
   *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
   body{
@@ -46,7 +77,7 @@
 
   header{
     position:sticky;top:0;z-index:60;
-    background:rgba(246,247,245,.92);backdrop-filter:blur(10px);
+    background:var(--header-bg);backdrop-filter:blur(10px);
     border-bottom:1px solid var(--line);
   }
   .nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0;}
@@ -224,7 +255,9 @@
       <a href="/">Home</a>
       <a href="/report/">Report an issue</a>
       <a href="/my-reports/">My reports</a>
+      <a href="/ev-stations/">EV stations</a>
     </nav>
+    <button class="btn btn-ghost btn-sm" id="civic-theme-toggle" type="button" aria-label="Toggle dark mode" style="margin-right:6px;padding:8px 12px;"></button>
     <div class="navactions" id="civic-nav-actions"></div>
   </div>
 </header>
@@ -380,9 +413,32 @@
   }
 
   // Expose everything under one global so page scripts can use it.
+  // ---- dark/light theme toggle ----
+  var THEME_KEY = 'civic_theme';
+  function getTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  }
+  function setTheme(theme, btn) {
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+    if (btn) btn.textContent = theme === 'dark' ? '\u2600\ufe0f' : '\ud83c\udf19';
+  }
+  function initThemeToggle(btn) {
+    if (!btn) return;
+    setTheme(getTheme(), btn);
+    btn.addEventListener('click', function () {
+      setTheme(getTheme() === 'dark' ? 'light' : 'dark', btn);
+    });
+  }
+
   window.CivicApp = {
     API_BASE, getToken, getUser, setSession, clearSession, isLoggedIn,
-    apiFetch, renderNavActions, statusLabel, fmtDate, slaRemaining
+    apiFetch, renderNavActions, statusLabel, fmtDate, slaRemaining,
+    initThemeToggle
   };
 })();
 
@@ -391,6 +447,7 @@
 
 document.addEventListener('DOMContentLoaded', function () {
   CivicApp.renderNavActions(document.getElementById('civic-nav-actions'));
+  CivicApp.initThemeToggle(document.getElementById('civic-theme-toggle'));
 
   if (CivicApp.isLoggedIn()) {
     window.location.href = '/dashboard/';

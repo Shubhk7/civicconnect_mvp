@@ -31,7 +31,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/civicconnect
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/civicconnect
       SPRING_DATASOURCE_USERNAME: civicconnect
       SPRING_DATASOURCE_PASSWORD: civicconnect_dev_password
       UPLOADS_DIR: /app/uploads

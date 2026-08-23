@@ -15,6 +15,38 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Integer> {
 
     List<Complaint> findByReportedByUserIdOrderByCreatedAtDesc(Integer reportedByUserId);
 
+    // Used by /api/complaints/stats to compute the "open" / "SLA < 24h" /
+    // "breached" KPIs. Fetches the small working set (open complaints,
+    // optionally ward-scoped) so the actual deadline math — which needs
+    // "now" — can happen in Java rather than being baked into SQL.
+    List<Complaint> findByStatusIn(List<String> statuses);
+
+    List<Complaint> findByWardIdAndStatusIn(Integer wardId, List<String> statuses);
+
+    // On-time resolution %: closed complaints (RESOLVED/VERIFIED/CLOSED)
+    // that were never flagged as escalated, out of all closed complaints.
+    // Uses the persisted `escalated` flag rather than re-deriving breach
+    // from slaDeadline, because slaDeadline comparisons only tell you
+    // about *now* — a resolved complaint's deadline is almost always in
+    // the past regardless of whether it was met. `escalated` is the one
+    // fact that survives resolution: SlaEscalationService sets it exactly
+    // once, the moment a complaint first goes overdue, and it's never
+    // cleared afterward.
+    @Query(
+        "SELECT COUNT(c) FROM Complaint c " +
+        "WHERE c.status IN :closedStatuses " +
+        "AND (:wardId IS NULL OR c.ward.id = :wardId)"
+    )
+    long countClosed(@Param("closedStatuses") List<String> closedStatuses, @Param("wardId") Integer wardId);
+
+    @Query(
+        "SELECT COUNT(c) FROM Complaint c " +
+        "WHERE c.status IN :closedStatuses " +
+        "AND c.escalated = false " +
+        "AND (:wardId IS NULL OR c.ward.id = :wardId)"
+    )
+    long countClosedOnTime(@Param("closedStatuses") List<String> closedStatuses, @Param("wardId") Integer wardId);
+
     // Used by the SLA escalation job: complaints whose deadline has
     // already passed, that are still open, and that haven't already been
     // flagged as escalated (so the job doesn't redo work every run).

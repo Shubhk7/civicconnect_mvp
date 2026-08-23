@@ -625,31 +625,26 @@
       document.getElementById('wardSub').textContent =
         'Admin view — showing complaints across all wards.';
     }
-    renderKpis();
+    loadKpis();
     render();
   }
 
-  const CLOSED_STATUSES = ['RESOLVED', 'VERIFIED', 'CLOSED'];
-
-  function renderKpis() {
-    const open = allComplaints.filter(function (c) { return CLOSED_STATUSES.indexOf(c.status) === -1; });
-    const nearSla = open.filter(function (c) {
-      if (c.slaBreached) return false;
-      const sla = CivicApp.slaRemaining(c.slaDeadline);
-      return sla && !sla.breached && (new Date(c.slaDeadline).getTime() - Date.now()) < 24 * 3600000;
-    });
-    const breached = allComplaints.filter(function (c) { return c.slaBreached; });
-    const closed = allComplaints.filter(function (c) { return CLOSED_STATUSES.indexOf(c.status) !== -1; });
-    // "On time" = closed without ever tripping the breach flag. Complaints
-    // still open don't count toward this yet — it's a resolution-quality
-    // metric, not a snapshot of everything currently in flight.
-    const onTimeClosed = closed.filter(function (c) { return !c.slaBreached; });
-    const onTimePct = closed.length ? Math.round((onTimeClosed.length / closed.length) * 100) : null;
-
-    document.getElementById('kpi-open').textContent = open.length;
-    document.getElementById('kpi-near-sla').textContent = nearSla.length;
-    document.getElementById('kpi-breached').textContent = breached.length;
-    document.getElementById('kpi-ontime').textContent = onTimePct === null ? '—' : onTimePct + '%';
+  // KPIs come from a dedicated backend endpoint rather than being derived
+  // from the complaint list above. The two aren't quite the same data:
+  // on-time % in particular needs to look at complaints that are already
+  // closed (and whether they were ever flagged overdue before closing),
+  // not just what's currently open — which the /api/complaints list is
+  // scoped to show clearly anyway, but which isn't a natural fit to
+  // recompute correctly on the client from a single list payload.
+  async function loadKpis() {
+    const { ok, data } = await CivicApp.apiFetch('/api/complaints/stats');
+    if (!ok || !data) return; // stat row just keeps showing "—"
+    document.getElementById('kpi-open').textContent = data.open;
+    document.getElementById('kpi-near-sla').textContent = data.nearSla;
+    document.getElementById('kpi-breached').textContent = data.breached;
+    document.getElementById('kpi-ontime').textContent =
+      data.onTimePercentage === null || data.onTimePercentage === undefined
+        ? '—' : data.onTimePercentage + '%';
   }
 
   if (!CivicApp.isLoggedIn() || !isOfficerOrAdmin) {

@@ -2,6 +2,7 @@ package com.civicconnect.backend.controller;
 
 import com.civicconnect.backend.dto.ComplaintRequest;
 import com.civicconnect.backend.dto.ComplaintResponse;
+import com.civicconnect.backend.dto.OfficerStatsResponse;
 import com.civicconnect.backend.dto.PublicTimelineEntry;
 import com.civicconnect.backend.model.Complaint;
 import com.civicconnect.backend.repository.ComplaintRepository;
@@ -161,6 +162,23 @@ public class ComplaintController {
             complaints = complaintRepository.findAll();
         }
         return complaints.stream().map(ComplaintResponse::from).toList();
+    }
+
+    // Officer/admin dashboard KPIs: open / near-SLA / breached counts and
+    // on-time resolution %. Same ward-scoping rule as the plain list
+    // endpoint above — an OFFICER always gets their own ward's numbers,
+    // ADMIN gets citywide numbers. SecurityConfig restricts this path to
+    // ROLE_OFFICER/ROLE_ADMIN (registered ahead of the permitAll
+    // /api/complaints/* wildcard — see SecurityConfig for why that
+    // ordering matters).
+    @GetMapping("/stats")
+    public OfficerStatsResponse stats() {
+        AuthenticatedUser authUser = currentUser();
+        Integer wardId = null;
+        if (isOfficer(authUser) && !isAdmin(authUser)) {
+            wardId = authUser.wardId();
+        }
+        return complaintService.computeStats(wardId);
     }
 
     // Public: explicit "me too" upvote on an existing report. No account

@@ -2,6 +2,7 @@ package com.civicconnect.backend.service;
 
 import com.civicconnect.backend.dto.ComplaintRequest;
 import com.civicconnect.backend.dto.ComplaintResponse;
+import com.civicconnect.backend.dto.OfficerStatsResponse;
 import com.civicconnect.backend.model.Complaint;
 import com.civicconnect.backend.model.ComplaintStatusHistory;
 import com.civicconnect.backend.model.ComplaintUpvote;
@@ -193,6 +194,46 @@ public class ComplaintService {
         Complaint saved = complaintRepository.save(c);
         recordHistory(saved, newStatus, note);
         return saved;
+    }
+
+    private static final List<String> OPEN_STATUSES =
+        List.of("REPORTED", "ACKNOWLEDGED", "ASSIGNED", "IN_PROGRESS", "UNASSIGNED", "REOPENED");
+    private static final List<String> CLOSED_STATUSES =
+        List.of("RESOLVED", "VERIFIED", "CLOSED");
+    private static final long NEAR_SLA_WINDOW_HOURS = 24;
+
+    /**
+     * Aggregate KPIs for the officer dashboard's stat row. wardId null
+     * means "all wards" (ADMIN); a non-null wardId scopes everything to
+     * that ward (OFFICER). The caller (ComplaintController) is
+     * responsible for deciding which of those applies — this method just
+     * trusts the wardId it's given.
+     */
+    public OfficerStatsResponse computeStats(Integer wardId) {
+        List<Complaint> openComplaints = wardId != null
+            ? complaintRepository.findByWardIdAndStatusIn(wardId, OPEN_STATUSES)
+            : complaintRepository.findByStatusIn(OPEN_STATUSES);
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime nearSlaCutoff = now.plusHours(NEAR_SLA_WINDOW_HOURS);
+        int nearSla = 0;
+        int breached = 0;
+        for (Complaint c : openComplaints) {
+            if (c.getSlaDeadline() == null) continue;
+            if (c.getSlaDeadline().isBefore(now)) {
+                breached++;
+            } else if (c.getSlaDeadline().isBefore(nearSlaCutoff)) {
+                nearSla++;
+            }
+        }
+
+        long closedCount = complaintRepository.countClosed(CLOSED_STATUSES, wardId);
+        long onTimeClosed = complaintRepository.countClosedOnTime(CLOSED_STATUSES, wardId);
+        Integer onTimePercentage = closedCount > 0
+            ? Math.round((onTimeClosed * 100f) / closedCount)
+            : null;
+
+        return new OfficerStatsResponse(openComplaints.size(), nearSla, breached, (int) closedCount, onTimePercentage);
     }
 
     private void recordHistory(Complaint complaint, String status, String note) {

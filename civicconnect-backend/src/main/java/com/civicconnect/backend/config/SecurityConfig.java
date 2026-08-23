@@ -83,6 +83,13 @@ public class SecurityConfig {
                 //     (ownership is enforced in the controller, not here) ---
                 .requestMatchers(HttpMethod.GET, "/api/complaints/my").authenticated()
 
+                // --- Officer/admin only: aggregate KPIs for the officer
+                //     dashboard. Must be registered BEFORE the
+                //     GET /api/complaints/* permitAll rule below — that
+                //     wildcard matches a single path segment and would
+                //     otherwise swallow /api/complaints/stats as public. ---
+                .requestMatchers(HttpMethod.GET, "/api/complaints/stats").hasAnyAuthority("ROLE_OFFICER", "ROLE_ADMIN")
+
                 // --- Public: single complaint + its timeline. Sanitized
                 //     at the DTO level (see PublicTimelineEntry) so this
                 //     being public is safe. Must be registered AFTER

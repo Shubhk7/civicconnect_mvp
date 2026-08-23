@@ -358,6 +358,13 @@
         <p class="section-sub" id="wardSub">Showing complaints in your assigned ward. Overdue reports are flagged automatically.</p>
       </div>
 
+      <div class="stat-row">
+        <div class="stat-card"><div class="num" id="kpi-open">—</div><div class="lab">Open complaints</div></div>
+        <div class="stat-card"><div class="num" id="kpi-near-sla">—</div><div class="lab">SLA &lt; 24h</div></div>
+        <div class="stat-card"><div class="num" id="kpi-breached">—</div><div class="lab">SLA breached</div></div>
+        <div class="stat-card"><div class="num" id="kpi-ontime">—</div><div class="lab">On-time resolution</div></div>
+      </div>
+
       <div class="filter-bar">
         <button class="filter-btn active" data-filter="all">All</button>
         <button class="filter-btn" data-filter="breached">SLA breached</button>
@@ -374,7 +381,6 @@
 <footer class="rich">
   <div class="wrap">
     <div class="footer-bottom">
-      <span>CivicConnect &mdash; a civic accountability platform, built for FOCP-II.</span>
       <span>Reporter identity is never shown, even here.</span>
     </div>
   </div>
@@ -427,14 +433,25 @@
     return { ok: res.ok, status: res.status, data };
   }
 
+  // Where a user lands after login, and which nav link "home base" points
+  // to. Officers/admins get the officer console; citizens get the personal
+  // dashboard. Keeping this in one place means role routing can't drift
+  // between pages.
+  function homeFor(user) {
+    return (user && (user.role === 'OFFICER' || user.role === 'ADMIN')) ? '/officer/' : '/dashboard/';
+  }
+
   function renderNavActions(el) {
     if (!el) return;
     if (isLoggedIn()) {
       const user = getUser();
+      const isStaff = user && (user.role === 'OFFICER' || user.role === 'ADMIN');
+      const home = homeFor(user);
+      const homeLabel = isStaff ? 'Officer dashboard' : (user && user.fullName ? user.fullName.split(' ')[0] : 'Dashboard');
       el.innerHTML =
-        '<a class="btn btn-text" href="/dashboard/">' + (user && user.fullName ? user.fullName.split(' ')[0] : 'Dashboard') + '</a>' +
+        '<a class="btn btn-text" href="' + home + '">' + homeLabel + '</a>' +
         '<button class="btn btn-ghost btn-sm" id="civic-logout-btn">Log out</button>' +
-        '<a class="btn btn-solid" href="/report/">Report an issue</a>';
+        (isStaff ? '' : '<a class="btn btn-solid" href="/report/">Report an issue</a>');
       const logoutBtn = document.getElementById('civic-logout-btn');
       if (logoutBtn) logoutBtn.addEventListener('click', function () {
         clearSession();
@@ -465,6 +482,23 @@
     return { breached: false, text: hrs + 'h remaining' };
   }
 
+  // ---- SLA traffic-light badge ----
+  // Turns a raw deadline + status into a plain-language accountability
+  // signal: on track / approaching / breached. Officer view also gets the
+  // colored pill classes (sla-ok / sla-warn / sla-breach); citizen-facing
+  // pages reuse the same classes so the language and color stay consistent
+  // everywhere a citizen or officer sees an SLA.
+  function slaBadge(iso, status) {
+    const closed = ['RESOLVED', 'VERIFIED', 'CLOSED'].indexOf(status) !== -1;
+    if (closed) return { cls: 'sla-ok', icon: '\ud83d\udfe2', label: 'Resolved', text: '' };
+    const sla = slaRemaining(iso);
+    if (!sla) return { cls: 'sla-ok', icon: '\u26aa', label: 'No deadline set', text: '' };
+    if (sla.breached) return { cls: 'sla-breach', icon: '\ud83d\udd34', label: 'SLA breached', text: sla.text };
+    const diffMs = new Date(iso).getTime() - Date.now();
+    if (diffMs < 6 * 3600000) return { cls: 'sla-warn', icon: '\ud83d\udfe1', label: 'SLA approaching', text: sla.text };
+    return { cls: 'sla-ok', icon: '\ud83d\udfe2', label: 'On track', text: sla.text };
+  }
+
   // ---- dark/light theme toggle ----
   var THEME_KEY = 'civic_theme';
   function getTheme() {
@@ -489,7 +523,7 @@
 
   window.CivicApp = {
     API_BASE, getToken, getUser, setSession, clearSession, isLoggedIn,
-    apiFetch, renderNavActions, statusLabel, fmtDate, slaRemaining,
+    apiFetch, renderNavActions, homeFor, statusLabel, fmtDate, slaRemaining, slaBadge,
     initThemeToggle
   };
 })();
@@ -529,9 +563,7 @@
       return;
     }
     el.innerHTML = filtered.map(function (c) {
-      const sla = CivicApp.slaRemaining(c.slaDeadline);
-      const slaClass = c.slaBreached ? 'sla-breach' : (sla && !sla.breached && (new Date(c.slaDeadline) - Date.now()) < 6*3600000 ? 'sla-warn' : 'sla-ok');
-      const slaText = sla ? sla.text : 'No deadline set';
+      const badge = CivicApp.slaBadge(c.slaDeadline, c.status);
       return (
         '<div class="officer-row">' +
           '<div>' +
@@ -543,7 +575,7 @@
             '</div>' +
           '</div>' +
           '<span class="status-pill status-' + c.status + '" style="background:var(--indigo-tint);color:var(--indigo);font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:100px;">' + CivicApp.statusLabel(c.status) + '</span>' +
-          '<span class="sla-tag ' + slaClass + '">' + slaText + '</span>' +
+          '<span class="sla-tag ' + badge.cls + '">' + badge.icon + ' ' + badge.label + (badge.text ? ' &middot; ' + badge.text : '') + '</span>' +
           '<div class="officer-actions">' +
             (c.status !== 'RESOLVED' && c.status !== 'CLOSED' && c.status !== 'VERIFIED'
               ? '<button class="btn btn-sm btn-solid" data-resolve="' + c.id + '">Mark resolved</button>'
@@ -593,7 +625,31 @@
       document.getElementById('wardSub').textContent =
         'Admin view — showing complaints across all wards.';
     }
+    renderKpis();
     render();
+  }
+
+  const CLOSED_STATUSES = ['RESOLVED', 'VERIFIED', 'CLOSED'];
+
+  function renderKpis() {
+    const open = allComplaints.filter(function (c) { return CLOSED_STATUSES.indexOf(c.status) === -1; });
+    const nearSla = open.filter(function (c) {
+      if (c.slaBreached) return false;
+      const sla = CivicApp.slaRemaining(c.slaDeadline);
+      return sla && !sla.breached && (new Date(c.slaDeadline).getTime() - Date.now()) < 24 * 3600000;
+    });
+    const breached = allComplaints.filter(function (c) { return c.slaBreached; });
+    const closed = allComplaints.filter(function (c) { return CLOSED_STATUSES.indexOf(c.status) !== -1; });
+    // "On time" = closed without ever tripping the breach flag. Complaints
+    // still open don't count toward this yet — it's a resolution-quality
+    // metric, not a snapshot of everything currently in flight.
+    const onTimeClosed = closed.filter(function (c) { return !c.slaBreached; });
+    const onTimePct = closed.length ? Math.round((onTimeClosed.length / closed.length) * 100) : null;
+
+    document.getElementById('kpi-open').textContent = open.length;
+    document.getElementById('kpi-near-sla').textContent = nearSla.length;
+    document.getElementById('kpi-breached').textContent = breached.length;
+    document.getElementById('kpi-ontime').textContent = onTimePct === null ? '—' : onTimePct + '%';
   }
 
   if (!CivicApp.isLoggedIn() || !isOfficerOrAdmin) {

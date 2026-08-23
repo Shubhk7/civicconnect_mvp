@@ -361,7 +361,6 @@
 <footer class="rich">
   <div class="wrap">
     <div class="footer-bottom">
-      <span>CivicConnect &mdash; a civic accountability platform, built for FOCP-II.</span>
       <span>Reporter identity is never shown publicly, on any page.</span>
     </div>
   </div>
@@ -414,14 +413,25 @@
     return { ok: res.ok, status: res.status, data };
   }
 
+  // Where a user lands after login, and which nav link "home base" points
+  // to. Officers/admins get the officer console; citizens get the personal
+  // dashboard. Keeping this in one place means role routing can't drift
+  // between pages.
+  function homeFor(user) {
+    return (user && (user.role === 'OFFICER' || user.role === 'ADMIN')) ? '/officer/' : '/dashboard/';
+  }
+
   function renderNavActions(el) {
     if (!el) return;
     if (isLoggedIn()) {
       const user = getUser();
+      const isStaff = user && (user.role === 'OFFICER' || user.role === 'ADMIN');
+      const home = homeFor(user);
+      const homeLabel = isStaff ? 'Officer dashboard' : (user && user.fullName ? user.fullName.split(' ')[0] : 'Dashboard');
       el.innerHTML =
-        '<a class="btn btn-text" href="/dashboard/">' + (user && user.fullName ? user.fullName.split(' ')[0] : 'Dashboard') + '</a>' +
+        '<a class="btn btn-text" href="' + home + '">' + homeLabel + '</a>' +
         '<button class="btn btn-ghost btn-sm" id="civic-logout-btn">Log out</button>' +
-        '<a class="btn btn-solid" href="/report/">Report an issue</a>';
+        (isStaff ? '' : '<a class="btn btn-solid" href="/report/">Report an issue</a>');
       const logoutBtn = document.getElementById('civic-logout-btn');
       if (logoutBtn) logoutBtn.addEventListener('click', function () {
         clearSession();
@@ -476,7 +486,7 @@
 
   window.CivicApp = {
     API_BASE, getToken, getUser, setSession, clearSession, isLoggedIn,
-    apiFetch, renderNavActions, statusLabel, fmtDate, slaRemaining,
+    apiFetch, renderNavActions, homeFor, statusLabel, fmtDate, slaRemaining,
     initThemeToggle
   };
 })();

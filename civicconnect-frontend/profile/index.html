@@ -348,14 +348,25 @@ window.CIVIC_REQUIRE_AUTH = true;
   // Call this once per page inside an element with id="civic-nav-actions".
   // Swaps between "Log in / Create account" and "Dashboard / Log out"
   // depending on session state.
+  // Where a user lands after login, and which nav link "home base" points
+  // to. Officers/admins get the officer console; citizens get the personal
+  // dashboard. Keeping this in one place means role routing can't drift
+  // between pages.
+  function homeFor(user) {
+    return (user && (user.role === 'OFFICER' || user.role === 'ADMIN')) ? '/officer/' : '/dashboard/';
+  }
+
   function renderNavActions(el) {
     if (!el) return;
     if (isLoggedIn()) {
       const user = getUser();
+      const isStaff = user && (user.role === 'OFFICER' || user.role === 'ADMIN');
+      const home = homeFor(user);
+      const homeLabel = isStaff ? 'Officer dashboard' : (user && user.fullName ? user.fullName.split(' ')[0] : 'Dashboard');
       el.innerHTML =
-        '<a class="btn btn-text" href="/dashboard/">' + (user && user.fullName ? user.fullName.split(' ')[0] : 'Dashboard') + '</a>' +
+        '<a class="btn btn-text" href="' + home + '">' + homeLabel + '</a>' +
         '<button class="btn btn-ghost btn-sm" id="civic-logout-btn">Log out</button>' +
-        '<a class="btn btn-solid" href="/report/">Report an issue</a>';
+        (isStaff ? '' : '<a class="btn btn-solid" href="/report/">Report an issue</a>');
       const logoutBtn = document.getElementById('civic-logout-btn');
       if (logoutBtn) logoutBtn.addEventListener('click', function () {
         clearSession();
@@ -412,7 +423,7 @@ window.CIVIC_REQUIRE_AUTH = true;
 
   window.CivicApp = {
     API_BASE, getToken, getUser, setSession, clearSession, isLoggedIn,
-    apiFetch, renderNavActions, statusLabel, fmtDate, slaRemaining,
+    apiFetch, renderNavActions, homeFor, statusLabel, fmtDate, slaRemaining,
     initThemeToggle
   };
 })();

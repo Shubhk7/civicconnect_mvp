@@ -59,6 +59,10 @@
   }
   html{color-scheme:light dark;}
   [data-theme="dark"] html,[data-theme="dark"]{color-scheme:dark;}
+  .sla-tag{font-family:var(--mono);font-size:11.5px;padding:5px 10px;border-radius:100px;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+  .sla-ok{background:var(--teal-tint);color:var(--teal);}
+  .sla-warn{background:var(--amber-tint);color:var(--amber);}
+  .sla-breach{background:var(--red-tint);color:var(--red);}
   body{transition:background-color .15s ease,color .15s ease;}
   *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
@@ -362,14 +366,25 @@ window.CIVIC_REQUIRE_AUTH = true;
   // Call this once per page inside an element with id="civic-nav-actions".
   // Swaps between "Log in / Create account" and "Dashboard / Log out"
   // depending on session state.
+  // Where a user lands after login, and which nav link "home base" points
+  // to. Officers/admins get the officer console; citizens get the personal
+  // dashboard. Keeping this in one place means role routing can't drift
+  // between pages.
+  function homeFor(user) {
+    return (user && (user.role === 'OFFICER' || user.role === 'ADMIN')) ? '/officer/' : '/dashboard/';
+  }
+
   function renderNavActions(el) {
     if (!el) return;
     if (isLoggedIn()) {
       const user = getUser();
+      const isStaff = user && (user.role === 'OFFICER' || user.role === 'ADMIN');
+      const home = homeFor(user);
+      const homeLabel = isStaff ? 'Officer dashboard' : (user && user.fullName ? user.fullName.split(' ')[0] : 'Dashboard');
       el.innerHTML =
-        '<a class="btn btn-text" href="/dashboard/">' + (user && user.fullName ? user.fullName.split(' ')[0] : 'Dashboard') + '</a>' +
+        '<a class="btn btn-text" href="' + home + '">' + homeLabel + '</a>' +
         '<button class="btn btn-ghost btn-sm" id="civic-logout-btn">Log out</button>' +
-        '<a class="btn btn-solid" href="/report/">Report an issue</a>';
+        (isStaff ? '' : '<a class="btn btn-solid" href="/report/">Report an issue</a>');
       const logoutBtn = document.getElementById('civic-logout-btn');
       if (logoutBtn) logoutBtn.addEventListener('click', function () {
         clearSession();
@@ -401,6 +416,23 @@ window.CIVIC_REQUIRE_AUTH = true;
     return { breached: false, text: hrs + 'h remaining' };
   }
 
+  // ---- SLA traffic-light badge ----
+  // Turns a raw deadline + status into a plain-language accountability
+  // signal: on track / approaching / breached. Officer view also gets the
+  // colored pill classes (sla-ok / sla-warn / sla-breach); citizen-facing
+  // pages reuse the same classes so the language and color stay consistent
+  // everywhere a citizen or officer sees an SLA.
+  function slaBadge(iso, status) {
+    const closed = ['RESOLVED', 'VERIFIED', 'CLOSED'].indexOf(status) !== -1;
+    if (closed) return { cls: 'sla-ok', icon: '\ud83d\udfe2', label: 'Resolved', text: '' };
+    const sla = slaRemaining(iso);
+    if (!sla) return { cls: 'sla-ok', icon: '\u26aa', label: 'No deadline set', text: '' };
+    if (sla.breached) return { cls: 'sla-breach', icon: '\ud83d\udd34', label: 'SLA breached', text: sla.text };
+    const diffMs = new Date(iso).getTime() - Date.now();
+    if (diffMs < 6 * 3600000) return { cls: 'sla-warn', icon: '\ud83d\udfe1', label: 'SLA approaching', text: sla.text };
+    return { cls: 'sla-ok', icon: '\ud83d\udfe2', label: 'On track', text: sla.text };
+  }
+
   // Expose everything under one global so page scripts can use it.
   // ---- dark/light theme toggle ----
   var THEME_KEY = 'civic_theme';
@@ -426,7 +458,7 @@ window.CIVIC_REQUIRE_AUTH = true;
 
   window.CivicApp = {
     API_BASE, getToken, getUser, setSession, clearSession, isLoggedIn,
-    apiFetch, renderNavActions, statusLabel, fmtDate, slaRemaining,
+    apiFetch, renderNavActions, homeFor, statusLabel, fmtDate, slaRemaining, slaBadge,
     initThemeToggle
   };
 })();
@@ -445,6 +477,15 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   const user = CivicApp.getUser();
+
+  // This page is the citizen "what happened to my complaints" view.
+  // Officers/admins have a different job here (working a queue, not
+  // tracking their own reports), so send them to their own console
+  // instead of showing them an empty citizen dashboard.
+  if (user && (user.role === 'OFFICER' || user.role === 'ADMIN')) {
+    window.location.href = '/officer/';
+    return;
+  }
   document.getElementById('dash-greeting-name').textContent =
     'Welcome back' + (user && user.fullName ? ', ' + user.fullName.split(' ')[0] : '');
 
@@ -474,12 +515,16 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   listEl.innerHTML = reports.slice(0, 5).map(function (r) {
+    const badge = CivicApp.slaBadge(r.slaDeadline, r.status);
     return '<a class="report-row" href="/report-details/?id=' + r.id + '" style="text-decoration:none;color:inherit;">' +
       '<div>' +
         '<div class="issue">' + r.issueType + '</div>' +
         '<div class="meta">' + (r.wardName || 'Ward pending') + ' · ' + CivicApp.fmtDate(r.createdAt) + '</div>' +
       '</div>' +
-      '<span class="status-pill status-' + r.status + '">' + CivicApp.statusLabel(r.status) + '</span>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">' +
+        '<span class="status-pill status-' + r.status + '">' + CivicApp.statusLabel(r.status) + '</span>' +
+        '<span class="sla-tag ' + badge.cls + '">' + badge.icon + ' ' + badge.label + (badge.text ? ' &middot; ' + badge.text : '') + '</span>' +
+      '</div>' +
     '</a>';
   }).join('');
 });

@@ -219,8 +219,14 @@ public class ComplaintController {
         ResponseEntity<?> denied = denyIfOutsideOfficerWard(id);
         if (denied != null) return denied;
 
-        Complaint c = complaintService.markResolved(id, body.get("afterPhotoUrl"));
-        return ResponseEntity.ok(ComplaintResponse.from(c));
+        String afterPhotoUrl = body != null ? body.get("afterPhotoUrl") : null;
+        String note = body != null ? body.get("note") : null;
+        try {
+            Complaint c = complaintService.submitForVerification(id, afterPhotoUrl, note);
+            return ResponseEntity.ok(ComplaintResponse.from(c));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     // Generic status update (e.g. AI verification passes -> VERIFIED/CLOSED,

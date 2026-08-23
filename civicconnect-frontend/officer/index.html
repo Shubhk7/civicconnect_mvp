@@ -155,6 +155,7 @@
   .status-ASSIGNED,.status-ACKNOWLEDGED{background:rgba(201,130,46,.22);color:#F3B872;}
   .status-IN_PROGRESS{background:rgba(201,130,46,.3);color:#FFC988;}
   .status-RESOLVED,.status-VERIFIED,.status-CLOSED{background:rgba(51,214,166,.18);color:#7FEBC7;}
+  .status-AWAITING_VERIFICATION{background:rgba(36,50,107,.22);color:#C5CEF0;}
   .status-REOPENED{background:rgba(184,66,47,.25);color:#F0A18F;}
   .ledger-foot{
     padding:13px 22px;font-size:12px;color:#8B93BD;border-top:1px solid rgba(255,255,255,.12);
@@ -376,6 +377,27 @@
       <div class="officer-list" id="officerList"></div>
     </div>
 
+    <div class="modal-backdrop" id="verify-modal">
+      <div class="modal wide">
+        <div class="modal-head">
+          <h3>Submit for verification</h3>
+          <button class="modal-close" type="button" id="verify-close" aria-label="Close">&times;</button>
+        </div>
+        <p class="modal-sub">Attach an after photo and a short note. This does not close the complaint — it moves it to awaiting verification, and AI compares before/after photos.</p>
+        <div class="form-error" id="verify-error"></div>
+        <div class="field">
+          <label for="verify-photo">After photo</label>
+          <input type="file" id="verify-photo" accept="image/*">
+          <div class="hint" id="verify-photo-status">Faces and plates are blurred before storage, same as citizen uploads.</div>
+        </div>
+        <div class="field">
+          <label for="verify-note">Resolution note</label>
+          <textarea id="verify-note" placeholder="What was done on site?"></textarea>
+        </div>
+        <button class="btn btn-solid full-btn" type="button" id="verify-submit">Submit for verification</button>
+      </div>
+    </div>
+
   </div>
 </main>
 
@@ -539,7 +561,7 @@
 
   function prettyIssue(t) {
     return { pothole:'Pothole', garbage:'Garbage pileup', streetlight:'Streetlight out',
-             water_leak:'Water leakage', ewaste:'E-waste pickup' }[t] || t;
+             water_leak:'Water leakage', ewaste:'E-waste pickup', ev_charger:'EV charger' }[t] || t;
   }
 
   let allComplaints = [];
@@ -551,10 +573,103 @@
       return ['RESOLVED','VERIFIED','CLOSED'].indexOf(c.status) === -1;
     });
     if (currentFilter === 'resolved') return list.filter(function (c) {
-      return ['RESOLVED','VERIFIED','CLOSED'].indexOf(c.status) !== -1;
+      return ['RESOLVED','VERIFIED','CLOSED','AWAITING_VERIFICATION'].indexOf(c.status) !== -1;
     });
     return list;
   }
+
+  function mockImpactScore(c) {
+    // Demo-only 0–100 score. Not a live model.
+    var n = c.affectedCount || 1;
+    var sla = c.slaBreached ? 22 : 0;
+    var open = ['RESOLVED','VERIFIED','CLOSED'].indexOf(c.status) === -1 ? 12 : 0;
+    return Math.min(100, Math.round(18 + Math.min(n, 8) * 8 + sla + open));
+  }
+
+  let verifyId = null;
+  let verifyPhotoUrl = null;
+  const verifyModal = document.getElementById('verify-modal');
+  const verifyError = document.getElementById('verify-error');
+  const verifyPhotoInput = document.getElementById('verify-photo');
+  const verifyPhotoStatus = document.getElementById('verify-photo-status');
+  const verifyNote = document.getElementById('verify-note');
+
+  function openVerifyModal(id) {
+    verifyId = id;
+    verifyPhotoUrl = null;
+    verifyError.className = 'form-error';
+    verifyError.textContent = '';
+    verifyPhotoInput.value = '';
+    verifyNote.value = '';
+    verifyPhotoStatus.textContent = 'Faces and plates are blurred before storage, same as citizen uploads.';
+    verifyModal.classList.add('active');
+  }
+  function closeVerifyModal() {
+    verifyModal.classList.remove('active');
+    verifyId = null;
+  }
+  document.getElementById('verify-close').addEventListener('click', closeVerifyModal);
+  verifyModal.addEventListener('click', function (e) {
+    if (e.target === verifyModal) closeVerifyModal();
+  });
+
+  verifyPhotoInput.addEventListener('change', async function () {
+    const file = verifyPhotoInput.files[0];
+    if (!file) return;
+    verifyPhotoUrl = null;
+    verifyPhotoStatus.textContent = 'Uploading and blurring…';
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const token = CivicApp.getToken();
+      const headers = {};
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const res = await fetch(CivicApp.API_BASE + '/api/uploads/photo', {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        verifyPhotoStatus.textContent = data.error || 'Could not process this photo.';
+        return;
+      }
+      verifyPhotoUrl = data.photoUrl;
+      verifyPhotoStatus.textContent = 'After photo attached.';
+    } catch (err) {
+      verifyPhotoStatus.textContent = 'Upload failed. Try another photo.';
+    }
+  });
+
+  document.getElementById('verify-submit').addEventListener('click', async function () {
+    const btn = this;
+    verifyError.className = 'form-error';
+    if (!verifyPhotoUrl) {
+      verifyError.textContent = 'An after photo is required.';
+      verifyError.className = 'form-error show';
+      return;
+    }
+    if (!verifyNote.value.trim()) {
+      verifyError.textContent = 'A short resolution note is required.';
+      verifyError.className = 'form-error show';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+    const { ok, data } = await CivicApp.apiFetch('/api/complaints/' + verifyId + '/resolve', {
+      method: 'POST',
+      body: JSON.stringify({ afterPhotoUrl: verifyPhotoUrl, note: verifyNote.value.trim() })
+    });
+    btn.disabled = false;
+    btn.textContent = 'Submit for verification';
+    if (!ok) {
+      verifyError.textContent = (data && data.error) || 'Could not submit for verification.';
+      verifyError.className = 'form-error show';
+      return;
+    }
+    closeVerifyModal();
+    await load();
+  });
 
   function render() {
     const el = document.getElementById('officerList');
@@ -566,6 +681,7 @@
     el.innerHTML = filtered.map(function (c) {
       const badge = CivicApp.slaBadge(c.slaDeadline, c.status);
       const affected = c.affectedCount || 1;
+      const impact = mockImpactScore(c);
       return (
         '<div class="officer-row">' +
           '<div>' +
@@ -577,11 +693,12 @@
             '</div>' +
           '</div>' +
           '<span class="status-pill status-' + c.status + '" style="background:var(--indigo-tint);color:var(--indigo);font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:100px;">' + CivicApp.statusLabel(c.status) + '</span>' +
-          '<span class="impact-tag">' + (affected === 1 ? '1 resident affected' : affected + ' residents affected') + '</span>' +
+          '<span class="impact-tag">' + (affected === 1 ? '1 resident affected' : affected + ' residents affected') +
+            ' · impact ' + impact + '<span style="opacity:.7">*</span></span>' +
           '<span class="sla-tag ' + badge.cls + '">' + badge.icon + ' ' + badge.label + (badge.text ? ' &middot; ' + badge.text : '') + '</span>' +
           '<div class="officer-actions">' +
-            (c.status !== 'RESOLVED' && c.status !== 'CLOSED' && c.status !== 'VERIFIED'
-              ? '<button class="btn btn-sm btn-solid" data-resolve="' + c.id + '">Mark resolved</button>'
+            (['RESOLVED','CLOSED','VERIFIED','AWAITING_VERIFICATION'].indexOf(c.status) === -1
+              ? '<button class="btn btn-sm btn-solid" data-resolve="' + c.id + '">Submit for verification</button>'
               : '') +
           '</div>' +
         '</div>'
@@ -589,15 +706,8 @@
     }).join('');
 
     el.querySelectorAll('[data-resolve]').forEach(function (btn) {
-      btn.addEventListener('click', async function () {
-        const id = btn.getAttribute('data-resolve');
-        btn.disabled = true;
-        btn.textContent = 'Saving...';
-        const { ok } = await CivicApp.apiFetch('/api/complaints/' + id + '/resolve', {
-          method: 'POST',
-          body: JSON.stringify({})
-        });
-        if (ok) { await load(); } else { btn.disabled = false; btn.textContent = 'Mark resolved'; }
+      btn.addEventListener('click', function () {
+        openVerifyModal(btn.getAttribute('data-resolve'));
       });
     });
   }

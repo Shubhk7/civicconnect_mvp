@@ -159,6 +159,7 @@
   .status-ASSIGNED,.status-ACKNOWLEDGED{background:rgba(201,130,46,.22);color:#F3B872;}
   .status-IN_PROGRESS{background:rgba(201,130,46,.3);color:#FFC988;}
   .status-RESOLVED,.status-VERIFIED,.status-CLOSED{background:rgba(51,214,166,.18);color:#7FEBC7;}
+  .status-AWAITING_VERIFICATION{background:rgba(36,50,107,.18);color:var(--indigo);}
   .status-REOPENED{background:rgba(184,66,47,.25);color:#F0A18F;}
   .ledger-foot{
     padding:13px 22px;font-size:12px;color:#8B93BD;border-top:1px solid rgba(255,255,255,.12);
@@ -283,6 +284,14 @@
   <div class="stat-card"><div class="num" id="stat-open">—</div><div class="lab">Open</div></div>
   <div class="stat-card"><div class="num" id="stat-resolved">—</div><div class="lab">Resolved</div></div>
   <div class="stat-card"><div class="num" id="stat-breached">—</div><div class="lab">SLA breached</div></div>
+</div>
+
+<div class="panel" id="attention-panel" style="display:none;border-color:var(--amber);">
+  <div class="panel-head">
+    <h3>Needs your attention</h3>
+  </div>
+  <p class="section-sub" style="margin:-8px 0 14px;font-size:13.5px;">SLA-breached reports, items awaiting verification, or reports that were reopened.</p>
+  <div class="report-list" id="attention-list"></div>
 </div>
 
 <div class="panel">
@@ -498,6 +507,31 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   const reports = data || [];
+  const closed = ['RESOLVED', 'VERIFIED', 'CLOSED'];
+  function needsAttention(r) {
+    if (r.status === 'AWAITING_VERIFICATION' || r.status === 'REOPENED') return true;
+    const sla = CivicApp.slaRemaining(r.slaDeadline);
+    return sla && sla.breached && closed.indexOf(r.status) === -1;
+  }
+  const attention = reports.filter(needsAttention);
+  const attentionPanel = document.getElementById('attention-panel');
+  const attentionList = document.getElementById('attention-list');
+  if (attention.length > 0) {
+    attentionPanel.style.display = 'block';
+    attentionList.innerHTML = attention.map(function (r) {
+      const badge = CivicApp.slaBadge(r.slaDeadline, r.status);
+      let why = r.status === 'AWAITING_VERIFICATION' ? 'Awaiting verification of the claimed fix'
+        : r.status === 'REOPENED' ? 'Reopened — still unresolved'
+        : 'SLA breached';
+      return '<a class="report-row" href="/report-details/?id=' + r.id + '" style="text-decoration:none;color:inherit;">' +
+        '<div>' +
+          '<div class="issue">' + r.issueType + '</div>' +
+          '<div class="meta">' + why + ' · ' + (r.wardName || 'Ward pending') + '</div>' +
+        '</div>' +
+        '<span class="sla-tag ' + badge.cls + '">' + badge.icon + ' ' + badge.label + '</span>' +
+      '</a>';
+    }).join('');
+  }
   document.getElementById('stat-total').textContent = reports.length;
   document.getElementById('stat-open').textContent =
     reports.filter(function (r) { return !['RESOLVED', 'VERIFIED', 'CLOSED'].includes(r.status); }).length;

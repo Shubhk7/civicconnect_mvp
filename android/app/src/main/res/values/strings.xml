@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CivicConnect</string>
+    <string name="splash_tagline">Report it once. We find who is responsible.</string>
+    <string name="error_title">Unable to reach CivicConnect</string>
+    <string name="error_body">Check your connection and try again. The website and API were not changed — this app is only a wrapper around them.</string>
+    <string name="retry">Retry</string>
+    <string name="choose_photo">Choose a photo</string>
+</resources>

@@ -1,0 +1,5 @@
+# Copy to local.properties (that file is gitignored).
+# sdk.dir=/home/you/Android/Sdk
+# civicconnect.baseUrl=https://kashnet.online
+# For a local static server from the Android emulator:
+# civicconnect.baseUrl=http://10.0.2.2:8080

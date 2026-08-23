@@ -41,6 +41,12 @@ public class Complaint {
 
     private String status = "REPORTED";
 
+    @Column(name = "upvote_count")
+    private Integer upvoteCount = 0;
+
+    @Column(name = "escalated")
+    private boolean escalated = false;
+
     @Column(name = "sla_deadline")
     private LocalDateTime slaDeadline;
 
@@ -89,6 +95,12 @@ public class Complaint {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public Integer getUpvoteCount() { return upvoteCount; }
+    public void setUpvoteCount(Integer upvoteCount) { this.upvoteCount = upvoteCount; }
+
+    public boolean isEscalated() { return escalated; }
+    public void setEscalated(boolean escalated) { this.escalated = escalated; }
 
     public LocalDateTime getSlaDeadline() { return slaDeadline; }
     public void setSlaDeadline(LocalDateTime slaDeadline) { this.slaDeadline = slaDeadline; }

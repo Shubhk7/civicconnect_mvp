@@ -64,6 +64,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/complaints").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/wards").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/uploads/photo").permitAll()
+                .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
                 // Public feed for logged-out views (homepage ledger etc).
                 // Must be registered before the /api/complaints/* and
@@ -71,6 +73,11 @@ public class SecurityConfig {
                 // uses first-match-wins and both of those would otherwise
                 // shadow this more specific path.
                 .requestMatchers(HttpMethod.GET, "/api/complaints/public").permitAll()
+
+                // Public: explicit upvote on an existing report. No
+                // account required — see ComplaintController#upvote for
+                // how anonymous voters are (loosely) deduplicated.
+                .requestMatchers(HttpMethod.POST, "/api/complaints/*/upvote").permitAll()
 
                 // --- Authenticated: any logged-in role, own-data only
                 //     (ownership is enforced in the controller, not here) ---

@@ -10,6 +10,7 @@ public class ComplaintResponse {
     public String description;
     public String status;
     public String wardName;
+    public Integer wardId;
     public String roadType;
     public String department;
     public String authorityName;
@@ -17,6 +18,21 @@ public class ComplaintResponse {
     public LocalDateTime createdAt;
     public boolean isDuplicate;
     public String message;
+    public Integer upvoteCount;
+    // True when slaDeadline has passed and the complaint is still open.
+    // Computed at read time, not stored, so it's always accurate relative
+    // to "now" rather than whatever it was when last written.
+    public boolean slaBreached;
+    public boolean escalated;
+    // Included so the frontend can plot reports on a map (heatmap page).
+    // This is the report's location only — never anything about who
+    // filed it.
+    public Double lat;
+    public Double lng;
+
+    private static final java.util.Set<String> OPEN_STATUSES = java.util.Set.of(
+        "REPORTED", "ACKNOWLEDGED", "ASSIGNED", "IN_PROGRESS", "UNASSIGNED", "REOPENED"
+    );
 
     public static ComplaintResponse from(Complaint c) {
         ComplaintResponse r = new ComplaintResponse();
@@ -25,11 +41,21 @@ public class ComplaintResponse {
         r.description = c.getDescription();
         r.status = c.getStatus();
         r.wardName = c.getWard() != null ? c.getWard().getName() : null;
+        r.wardId = c.getWard() != null ? c.getWard().getId() : null;
         r.roadType = c.getRoadType();
         r.department = c.getDepartment();
         r.authorityName = c.getAuthorityName();
         r.slaDeadline = c.getSlaDeadline();
         r.createdAt = c.getCreatedAt();
+        r.upvoteCount = c.getUpvoteCount() != null ? c.getUpvoteCount() : 0;
+        r.slaBreached = c.getSlaDeadline() != null
+            && c.getSlaDeadline().isBefore(LocalDateTime.now())
+            && OPEN_STATUSES.contains(c.getStatus());
+        r.escalated = c.isEscalated();
+        if (c.getLocation() != null) {
+            r.lat = c.getLocation().getY();
+            r.lng = c.getLocation().getX();
+        }
         return r;
     }
 }

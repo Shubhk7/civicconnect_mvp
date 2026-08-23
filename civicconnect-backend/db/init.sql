@@ -42,6 +42,8 @@ CREATE TABLE complaints (
     status          VARCHAR(30) NOT NULL DEFAULT 'REPORTED',
         -- REPORTED, ACKNOWLEDGED, ASSIGNED, IN_PROGRESS, RESOLVED, VERIFIED, CLOSED, REOPENED
     sla_deadline    TIMESTAMP,
+    upvote_count    INTEGER NOT NULL DEFAULT 0,
+    escalated       BOOLEAN NOT NULL DEFAULT false,
     created_at      TIMESTAMP NOT NULL DEFAULT now(),
     updated_at      TIMESTAMP NOT NULL DEFAULT now()
 );
@@ -83,4 +85,19 @@ CREATE TABLE complaint_status_history (
     note            TEXT,
     created_at      TIMESTAMP NOT NULL DEFAULT now()
 );
+
+-- Upvotes: one row per (complaint, voter). voter_key is either an
+-- authenticated user id (as text) or an anonymous per-browser token sent
+-- by the frontend — this is a lightweight anti-spam measure, not a strong
+-- identity system, appropriate for a hackathon demo. The unique
+-- constraint is what actually prevents repeat-upvoting, not trust in the
+-- client.
+CREATE TABLE complaint_upvotes (
+    id              SERIAL PRIMARY KEY,
+    complaint_id    INTEGER NOT NULL REFERENCES complaints(id),
+    voter_key       VARCHAR(200) NOT NULL,
+    created_at      TIMESTAMP NOT NULL DEFAULT now(),
+    UNIQUE (complaint_id, voter_key)
+);
+
 

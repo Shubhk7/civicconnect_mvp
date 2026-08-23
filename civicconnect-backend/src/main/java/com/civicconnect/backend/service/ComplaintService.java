@@ -4,8 +4,10 @@ import com.civicconnect.backend.dto.ComplaintRequest;
 import com.civicconnect.backend.dto.ComplaintResponse;
 import com.civicconnect.backend.model.Complaint;
 import com.civicconnect.backend.model.ComplaintStatusHistory;
+import com.civicconnect.backend.model.ComplaintUpvote;
 import com.civicconnect.backend.repository.ComplaintRepository;
 import com.civicconnect.backend.repository.ComplaintStatusHistoryRepository;
+import com.civicconnect.backend.repository.ComplaintUpvoteRepository;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -23,15 +25,18 @@ public class ComplaintService {
 
     private final ComplaintRepository complaintRepository;
     private final ComplaintStatusHistoryRepository historyRepository;
+    private final ComplaintUpvoteRepository upvoteRepository;
     private final JurisdictionService jurisdictionService;
     private final AiClassificationService aiClassificationService;
 
     public ComplaintService(ComplaintRepository complaintRepository,
                              ComplaintStatusHistoryRepository historyRepository,
+                             ComplaintUpvoteRepository upvoteRepository,
                              JurisdictionService jurisdictionService,
                              AiClassificationService aiClassificationService) {
         this.complaintRepository = complaintRepository;
         this.historyRepository = historyRepository;
+        this.upvoteRepository = upvoteRepository;
         this.jurisdictionService = jurisdictionService;
         this.aiClassificationService = aiClassificationService;
     }
@@ -67,9 +72,23 @@ public class ComplaintService {
             req.getLng(), req.getLat(), effectiveIssueType, DUPLICATE_RADIUS_METERS
         );
         if (!nearby.isEmpty()) {
-            ComplaintResponse resp = ComplaintResponse.from(nearby.get(0));
+            Complaint existing = nearby.get(0);
+            // A duplicate report is, functionally, the same signal as an
+            // upvote — someone else independently confirming the same
+            // problem. Count it as one, using the same anti-spam voter_key
+            // mechanism as the explicit upvote endpoint, keyed on the
+            // reporter if known, otherwise on the submitted location as a
+            // weak fallback (imperfect, but this path already passed
+            // duplicate detection, so it's a reasonable proxy for a
+            // hackathon demo).
+            String voterKey = authenticatedUserId != null
+                ? "user:" + authenticatedUserId
+                : "anon-dup:" + req.getLat() + "," + req.getLng() + ":" + System.currentTimeMillis();
+            tryUpvote(existing.getId(), voterKey);
+            Complaint refreshed = complaintRepository.findById(existing.getId()).orElse(existing);
+            ComplaintResponse resp = ComplaintResponse.from(refreshed);
             resp.isDuplicate = true;
-            resp.message = "A similar open report already exists nearby. Treated as a duplicate.";
+            resp.message = "A similar open report already exists nearby. Added your upvote instead of creating a duplicate.";
             return resp;
         }
 
@@ -120,6 +139,39 @@ public class ComplaintService {
             resp.message += " Note: " + aiNote;
         }
         return resp;
+    }
+
+    /**
+     * Explicit upvote on an existing report (citizen-facing "me too"
+     * button). One vote per voterKey per complaint, enforced by a unique
+     * DB constraint — the check-then-insert here is a convenience for a
+     * clean response message, not the actual source of the guarantee.
+     * Returns false without changing anything if this voterKey already
+     * voted, so callers can tell the difference between "counted" and
+     * "already counted."
+     */
+    public boolean tryUpvote(Integer complaintId, String voterKey) {
+        if (upvoteRepository.existsByComplaintIdAndVoterKey(complaintId, voterKey)) {
+            return false;
+        }
+        Complaint c = complaintRepository.findById(complaintId)
+            .orElseThrow(() -> new IllegalArgumentException("Complaint not found: " + complaintId));
+
+        ComplaintUpvote vote = new ComplaintUpvote();
+        vote.setComplaint(c);
+        vote.setVoterKey(voterKey);
+        try {
+            upvoteRepository.save(vote);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Race condition: another request for the same voterKey landed
+            // between the exists-check and this save. The unique
+            // constraint caught it — treat as "already voted," not an error.
+            return false;
+        }
+
+        c.setUpvoteCount((c.getUpvoteCount() != null ? c.getUpvoteCount() : 0) + 1);
+        complaintRepository.save(c);
+        return true;
     }
 
     public Complaint markResolved(Integer complaintId, String afterPhotoUrl) {

@@ -15,6 +15,18 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Integer> {
 
     List<Complaint> findByReportedByUserIdOrderByCreatedAtDesc(Integer reportedByUserId);
 
+    // Used by the SLA escalation job: complaints whose deadline has
+    // already passed, that are still open, and that haven't already been
+    // flagged as escalated (so the job doesn't redo work every run).
+    @Query(
+        "SELECT c FROM Complaint c " +
+        "WHERE c.slaDeadline IS NOT NULL " +
+        "AND c.slaDeadline < CURRENT_TIMESTAMP " +
+        "AND c.escalated = false " +
+        "AND c.status IN ('REPORTED','ACKNOWLEDGED','ASSIGNED','IN_PROGRESS','UNASSIGNED','REOPENED')"
+    )
+    List<Complaint> findNewlyBreachedComplaints();
+
     // Duplicate check: same issue type within ~50 meters, still open.
     // ST_DWithin with geography cast gives distance in meters.
     @Query(value =

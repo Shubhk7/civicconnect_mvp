@@ -24,10 +24,12 @@ import cv2
 import numpy as np
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from PIL import Image
 
 from app.classify import IssueClassifier
 from app.verify import compare_before_after
+from app.blur import blur_faces_and_plates
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("civicconnect-ai")
@@ -93,3 +95,36 @@ async def verify(before: UploadFile = File(...), after: UploadFile = File(...)):
     before_img = _read_image(before_bytes)
     after_img = _read_image(after_bytes)
     return compare_before_after(before_img, after_img)
+
+
+@app.post("/blur")
+async def blur(file: UploadFile = File(...)):
+    """
+    Detects and blurs faces and license plates in the uploaded photo, then
+    returns the processed image bytes directly (image/jpeg). This is
+    meant to run BEFORE a photo is ever stored or shown publicly — the
+    Spring Boot backend's upload endpoint calls this first and only
+    persists the returned (blurred) bytes, never the original upload.
+
+    Detection counts are returned as response headers (not a JSON body,
+    since the response body is the image itself) so the caller can log or
+    surface how many regions were found:
+      X-Faces-Blurred, X-Plates-Blurred, X-Blur-Note
+    """
+    contents = await file.read()
+    image = _read_image(contents)
+    summary = blur_faces_and_plates(image)
+
+    success, encoded = cv2.imencode(".jpg", image)
+    if not success:
+        return Response(status_code=500, content=b"Failed to encode processed image")
+
+    return Response(
+        content=encoded.tobytes(),
+        media_type="image/jpeg",
+        headers={
+            "X-Faces-Blurred": str(summary["facesBlurred"]),
+            "X-Plates-Blurred": str(summary["platesBlurred"]),
+            "X-Blur-Note": summary["note"],
+        },
+    )

@@ -163,6 +163,36 @@ public class ComplaintController {
         return complaints.stream().map(ComplaintResponse::from).toList();
     }
 
+    // Public: explicit "me too" upvote on an existing report. No account
+    // required — voterKey identifies the voter loosely (an authenticated
+    // user id if logged in, otherwise a client-generated anonymous token
+    // the frontend keeps in localStorage). This is a lightweight
+    // anti-spam measure, not a strong identity system: good enough to
+    // stop one browser mashing the button, not resistant to a determined
+    // abuser clearing storage. Appropriate for a hackathon demo.
+    @PostMapping("/{id}/upvote")
+    public ResponseEntity<?> upvote(@PathVariable Integer id, @RequestBody(required = false) Map<String, String> body) {
+        AuthenticatedUser authUser = currentUser();
+        String voterKey;
+        if (authUser != null) {
+            voterKey = "user:" + authUser.userId();
+        } else {
+            String anonToken = body != null ? body.get("voterToken") : null;
+            if (anonToken == null || anonToken.isBlank()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "voterToken is required for anonymous upvotes"));
+            }
+            voterKey = "anon:" + anonToken;
+        }
+
+        boolean counted = complaintService.tryUpvote(id, voterKey);
+        Complaint c = complaintRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Complaint not found: " + id));
+        ComplaintResponse resp = ComplaintResponse.from(c);
+        resp.message = counted ? "Upvoted." : "You've already upvoted this report.";
+        return ResponseEntity.ok(resp);
+    }
+
     // Officer marks the issue fixed and uploads an after-photo.
     // SecurityConfig restricts this to ROLE_OFFICER/ROLE_ADMIN; an
     // OFFICER is further restricted here to complaints in their own ward.

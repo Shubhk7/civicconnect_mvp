@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: civicconnect
       POSTGRES_PASSWORD: civicconnect_dev_password
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
@@ -34,8 +34,13 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/civicconnect
       SPRING_DATASOURCE_USERNAME: civicconnect
       SPRING_DATASOURCE_PASSWORD: civicconnect_dev_password
-      ports:
+      UPLOADS_DIR: /app/uploads
+      UPLOADS_PUBLIC_BASE_URL: https://api.kashnet.online
+    ports:
       - "8080:8080"
+    volumes:
+      - uploads:/app/uploads
+
   ai-service:
     build:
       context: ../civicconnect-ai
@@ -46,5 +51,7 @@ services:
       - "8001:8001"
     environment:
       CLASSIFIER_MODEL_PATH: yolov8n.pt
+
 volumes:
   pgdata:
+  uploads:

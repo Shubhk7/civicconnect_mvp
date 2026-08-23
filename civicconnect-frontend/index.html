@@ -107,13 +107,21 @@
   .ledger-live .d{width:6px;height:6px;border-radius:50%;background:#33D6A6;animation:pulse 1.6s infinite;}
   .ledger-body{padding:6px 0;max-height:420px;overflow-y:auto;}
   .ledger-row{
-    display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;
+    display:grid;grid-template-columns:64px 1fr auto auto;gap:12px;align-items:center;
     padding:13px 22px;border-bottom:1px solid rgba(255,255,255,.07);
   }
   .ledger-row:last-child{border-bottom:none;}
   .ledger-id{font-family:var(--mono);font-size:11.5px;color:#8B93BD;}
   .ledger-mid .issue{font-weight:600;font-size:14px;}
   .ledger-mid .ward{font-family:var(--mono);font-size:11.5px;color:#9AA2C9;margin-top:2px;}
+  .upvote-btn{
+    display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.16);border-radius:100px;padding:6px 12px;
+    font-family:var(--mono);font-size:12px;color:#D7DBEE;cursor:pointer;transition:background .15s;
+  }
+  .upvote-btn:hover{background:rgba(255,255,255,.16);}
+  .upvote-btn:disabled{opacity:.5;cursor:default;}
+  .upvote-btn.voted{background:rgba(51,214,166,.18);border-color:rgba(51,214,166,.4);color:#7FEBC7;}
   .status-pill{
     font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;
     padding:4px 9px;border-radius:100px;white-space:nowrap;
@@ -273,6 +281,7 @@
     <nav class="navlinks">
       <a href="/">Home</a>
       <a href="/report/">Report an issue</a>
+      <a href="/heatmap/">Live map</a>
       <a href="/my-reports/">My reports</a>
     </nav>
     <div class="navactions" id="civic-nav-actions"></div>
@@ -573,6 +582,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   const recent = data.slice(-8).reverse();
   ledgerBody.innerHTML = recent.map(function (c) {
+    const voted = hasVoted(c.id);
     return '<div class="ledger-row">' +
       '<div class="ledger-id">#' + String(c.id).padStart(4, '0') + '</div>' +
       '<div class="ledger-mid">' +
@@ -580,13 +590,57 @@ document.addEventListener('DOMContentLoaded', async function () {
         '<div class="ward">' + escapeHtml(c.wardName || 'Ward pending') + (c.authorityName ? ' &middot; ' + escapeHtml(c.authorityName) : '') + '</div>' +
       '</div>' +
       '<span class="status-pill status-' + c.status + '">' + CivicApp.statusLabel(c.status) + '</span>' +
+      '<button class="upvote-btn' + (voted ? ' voted' : '') + '" data-upvote="' + c.id + '" ' + (voted ? 'disabled' : '') + '>' +
+        (voted ? '✓ ' : '▲ ') + (c.upvoteCount || 0) +
+      '</button>' +
     '</div>';
   }).join('');
+
+  ledgerBody.querySelectorAll('[data-upvote]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      const id = btn.getAttribute('data-upvote');
+      btn.disabled = true;
+      const body = CivicApp.isLoggedIn() ? {} : { voterToken: getAnonVoterToken() };
+      const { ok, data } = await CivicApp.apiFetch('/api/complaints/' + id + '/upvote', {
+        method: 'POST',
+        body: JSON.stringify(body)
+      });
+      if (ok) {
+        markVoted(id);
+        btn.classList.add('voted');
+        btn.textContent = '✓ ' + (data.upvoteCount || 0);
+      } else {
+        btn.disabled = false;
+      }
+    });
+  });
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m];
     });
+  }
+
+  // Anonymous upvote dedup: a random token stored per-browser so the same
+  // visitor can't spam-upvote by refreshing. Not a strong identity check
+  // (clearing storage resets it) — the backend's unique constraint is the
+  // real guarantee against duplicate votes from the same key; this is
+  // just what makes the button feel right for one honest visitor.
+  function getAnonVoterToken() {
+    let t = localStorage.getItem('civic_anon_voter');
+    if (!t) {
+      t = 'v-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('civic_anon_voter', t);
+    }
+    return t;
+  }
+  function votedSet() {
+    try { return JSON.parse(localStorage.getItem('civic_voted_ids') || '[]'); } catch (e) { return []; }
+  }
+  function hasVoted(id) { return votedSet().indexOf(id) !== -1; }
+  function markVoted(id) {
+    const s = votedSet();
+    if (s.indexOf(id) === -1) { s.push(Number(id)); localStorage.setItem('civic_voted_ids', JSON.stringify(s)); }
   }
 });
 

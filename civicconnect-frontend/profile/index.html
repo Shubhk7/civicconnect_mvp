@@ -37,6 +37,7 @@
     --mono:'IBM Plex Mono',monospace;
     --radius:14px;
     --header-bg:rgba(246,247,245,.92);
+    --indigo-surface:#161F49;
   }
   [data-theme="dark"]{
     --ink:#EDEFF2;
@@ -54,6 +55,7 @@
     --red-tint:#3A1D17;
     --line:#2A2E3B;
     --header-bg:rgba(18,20,28,.85);
+    --indigo-surface:#161F49;
   }
   html{color-scheme:light dark;}
   [data-theme="dark"] html,[data-theme="dark"]{color-scheme:dark;}
@@ -126,7 +128,7 @@
   .trust-item svg{flex-shrink:0;}
 
   .ledger{
-    background:var(--indigo-deep);border-radius:18px;overflow:hidden;color:#fff;
+    background:var(--indigo-surface);border-radius:18px;overflow:hidden;color:#fff;
     box-shadow:0 20px 50px -20px rgba(22,31,73,.5);
   }
   .ledger-head{

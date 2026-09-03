@@ -21,6 +21,11 @@ Android WebView  →  https://kashnet.online  →  https://api.kashnet.online
 Cookies are accepted first-party only. There is no `JavascriptInterface`
 and no native token store.
 
+The website now uses `viewport-fit=cover`, a bottom tab bar, and 16px
+inputs so Android Chrome / WebView do not zoom form fields or hide nav
+behind the gesture bar. `setTextZoom(100)` keeps system font scaling from
+breaking layouts.
+
 ## File upload
 
 `WebChromeClient.onShowFileChooser` + `FileProvider` camera extra.

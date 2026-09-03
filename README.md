@@ -42,7 +42,7 @@ same helper:
   returned URL is sent on `POST /api/complaints`
 - Location: `navigator.geolocation.getCurrentPosition` only when the
   citizen taps **Use my location** (not on launch)
-- File input: `<input type="file" accept="image/*">` (no `capture` attr)
+- File input: `<input type="file" accept="image/*" capture="environment">` (gallery still works; images are resized on-device before `POST /api/uploads/photo`)
 
 Because auth is `localStorage` + Bearer tokens, a normal WebView with
 JavaScript and DOM storage is enough. The Android app must not invent a
@@ -53,6 +53,14 @@ API: **https://api.kashnet.online**
 
 CORS on the API already allows `https://kashnet.online` (and www). The
 WebView origin is that site, so CORS behaves like mobile Chrome.
+
+## Mobile website
+
+Citizen pages (≤768px) use a bottom tab bar when logged in, a menu drawer
+for everyone, 16px form controls, and on-device photo resize. PWA bits:
+`/manifest.json` and `/sw.js` (static assets only — never API/JWT).
+
+See `docs/ANDROID.md` for WebView notes.
 
 ## Android application
 

@@ -1,0 +1,45 @@
+/* CivicConnect — shared tokens. Desktop pages still keep inline copies;
+   this file is the source of truth for new/mobile layers. */
+:root{
+  --ink:#101828;
+  --ink-soft:#565F73;
+  --paper:#F6F7F5;
+  --paper-raised:#FFFFFF;
+  --indigo:#24326B;
+  --indigo-deep:#161F49;
+  --indigo-tint:#E7E9F3;
+  --amber:#C9822E;
+  --amber-tint:#FBF0E1;
+  --teal:#0F7A63;
+  --teal-tint:#E3F1EC;
+  --red:#B8422F;
+  --red-tint:#F8E9E5;
+  --line:#DBDED6;
+  --disp:'Space Grotesk',sans-serif;
+  --body:'Inter',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+  --radius:14px;
+  --header-bg:rgba(246,247,245,.92);
+  --indigo-surface:#161F49;
+  --tabbar-h:68px;
+  --safe-bottom:env(safe-area-inset-bottom, 0px);
+  --safe-top:env(safe-area-inset-top, 0px);
+}
+[data-theme="dark"]{
+  --ink:#EDEFF2;
+  --ink-soft:#9AA3B5;
+  --paper:#12141C;
+  --paper-raised:#1A1E29;
+  --indigo:#8B97E0;
+  --indigo-deep:#B9C1EF;
+  --indigo-tint:#22273D;
+  --amber:#E3A85C;
+  --amber-tint:#332711;
+  --teal:#3FC4A2;
+  --teal-tint:#0F2E27;
+  --red:#E38672;
+  --red-tint:#3A1D17;
+  --line:#2A2E3B;
+  --header-bg:rgba(18,20,28,.85);
+  --indigo-surface:#161F49;
+}
